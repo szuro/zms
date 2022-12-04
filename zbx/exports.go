@@ -23,7 +23,7 @@ const (
 	CHARACTER
 	LOG
 	UNSIGNED
-	TEST
+	TEXT
 )
 
 type Host struct {
