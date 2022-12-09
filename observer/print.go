@@ -36,3 +36,14 @@ func (p *Print) SaveHistory(h []zbx.History) bool {
 	}
 	return true
 }
+
+func (p *Print) SaveTrends(t []zbx.Trend) bool {
+	for _, T := range t {
+		msg := fmt.Sprintf(
+			"Host: %s; Item: %s; Time: %d; Min/Max/Avg: %f/%f/%f",
+			T.Host.Host, T.Name, T.Clock, T.Min, T.Max, T.Avg,
+		)
+		fmt.Fprintln(p.out, msg)
+	}
+	return true
+}

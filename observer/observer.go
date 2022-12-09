@@ -6,6 +6,7 @@ type Observer interface {
 	GetName() string
 	SetName(name string)
 	SaveHistory(h []zbx.History) bool
+	SaveTrends(t []zbx.Trend) bool
 }
 
 type baseObserver struct {
