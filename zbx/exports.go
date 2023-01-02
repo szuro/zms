@@ -35,8 +35,8 @@ type Tag struct {
 }
 
 type History struct {
-	Host   Host `json:"host"`
-	ItemID int  `json:"itemid"`
+	Host   *Host `json:"host,omitempty"`
+	ItemID int   `json:"itemid"`
 	Name   string
 	Clock  int `json:"clock"`
 	Ns     int
@@ -45,8 +45,8 @@ type History struct {
 }
 
 type Trend struct {
-	Host          Host `json:"host"`
-	ItemID        int  `json:"itemid"`
+	Host          *Host `json:"host,omitempty"`
+	ItemID        int   `json:"itemid"`
 	Name          string
 	Clock         int
 	Count         int
