@@ -24,7 +24,8 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 	switch t.Type {
 	case "print":
 		obs = observer.NewPrint(t.Name, t.Connection)
-		// case "azuretable":
+	case "azuretable":
+		obs = observer.NewAzureTable(t.Name, t.Connection)
 	}
 
 	return obs
