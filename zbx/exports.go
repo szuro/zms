@@ -1,13 +1,5 @@
 package zbx
 
-import (
-	"encoding/json"
-	"fmt"
-	"path/filepath"
-
-	"github.com/nxadm/tail"
-)
-
 const (
 	HISTORY_EXPORT  string = "history-history-syncer-%d.ndjson"
 	HISTORY_MAIN    string = "history-main-process-0.ndjson"
@@ -26,14 +18,25 @@ const (
 	TEXT
 )
 
+const (
+	EVENT   = "events"
+	HISTORY = "history"
+	TREND   = "trends"
+)
+
 type Host struct {
 	Host string `json:"host"`
 	Name string `json:"name"`
 }
 
+type Tag struct {
+	Tag   string `json:"tag"`
+	Value string `json:"value"`
+}
+
 type History struct {
-	Host   Host `json:"host"`
-	ItemID int  `json:"itemid"`
+	Host   *Host `json:"host,omitempty"`
+	ItemID int   `json:"itemid"`
 	Name   string
 	Clock  int `json:"clock"`
 	Ns     int
@@ -42,49 +45,28 @@ type History struct {
 }
 
 type Trend struct {
-	Host          Host `json:"host"`
-	ItemID        int  `json:"itemid"`
+	Host          *Host `json:"host,omitempty"`
+	ItemID        int   `json:"itemid"`
 	Name          string
 	Clock         int
 	Count         int
-	min, max, avg float64
+	Min, Max, Avg float64
 	Type          int
 }
 
+type Event struct {
+	Clock    int      `json:"clock"`
+	NS       int      `json:"ns"`
+	Value    int      `json:"value"`
+	EventID  int      `json:"eventid"`
+	PEventID int      `json:"p_eventid"`
+	Name     string   `json:"name,omitempty"`
+	Severity int      `json:"severity,omitempty"`
+	Hosts    []Host   `json:"hosts,omitempty"`
+	Groups   []string `json:"groups,omitempty"`
+	Tags     []Tag    `json:"tags,omitempty"`
+}
+
 type Export interface {
-	History | Trend
-}
-
-func parseLine(line *tail.Line) (h History) {
-	err := json.Unmarshal([]byte(line.Text), &h)
-	if err != nil {
-		if h.Type == FLOAT && h.Value == "" {
-			h.Value = "0.0"
-		} else if h.Type == UNSIGNED && h.Value == "" {
-			h.Value = "0"
-		}
-	}
-	return
-}
-
-func FileReader(path string, c chan History) {
-	t, err := tail.TailFile(
-		path, tail.Config{Follow: true, ReOpen: true})
-	if err != nil {
-		fmt.Print(err)
-	}
-
-	for line := range t.Lines {
-		c <- parseLine(line)
-	}
-	t.Wait()
-}
-
-func FileReaderGenerator(zbx ZabbixConf) (c chan History) {
-	c = make(chan History, 100)
-	for i := 1; i <= zbx.DBSyncers; i++ {
-		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(HISTORY_EXPORT, i))
-		go FileReader(filename, c)
-	}
-	return
+	History | Trend | Event
 }

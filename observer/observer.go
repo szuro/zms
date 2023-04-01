@@ -1,11 +1,12 @@
 package observer
 
-import "szuro.net/crapage/zbx"
+import "szuro.net/zms/zbx"
 
 type Observer interface {
 	GetName() string
 	SetName(name string)
 	SaveHistory(h []zbx.History) bool
+	SaveTrends(t []zbx.Trend) bool
 }
 
 type baseObserver struct {
