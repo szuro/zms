@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"szuro.net/crapage/zbx"
+	"szuro.net/zms/zbx"
 )
 
 const (

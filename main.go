@@ -7,72 +7,17 @@ import (
 	"syscall"
 
 	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v3"
-	"szuro.net/crapage/observer"
-	"szuro.net/crapage/subject"
-	"szuro.net/crapage/zbx"
+	"szuro.net/zms/subject"
+	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms"
 )
-
-type Target struct {
-	Name       string
-	Type       string
-	Connection string
-	Source     []string
-}
-
-func (t *Target) ToObserver() (obs observer.Observer) {
-	switch t.Type {
-	case "print":
-		obs = observer.NewPrint(t.Name, t.Connection)
-	case "azuretable":
-		obs = observer.NewAzureTable(t.Name, t.Connection)
-	}
-
-	return obs
-}
-
-type CrapageConf struct {
-	ServerConfig string `yaml:"server_config"`
-	Targets      []Target
-}
-
-func ParseCrapageConfig(path string) (conf CrapageConf) {
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-
-	conf = CrapageConf{}
-	err = yaml.Unmarshal(file, &conf)
-
-	return
-}
-
-func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]subject.Subjecter) {
-	obs = make(map[string]subject.Subjecter)
-	for _, v := range zabbix.ExportTypes {
-		switch v {
-		case zbx.HISTORY:
-			hs := subject.NewSubject[zbx.History]()
-			hs.Funnel = zbx.FileReaderGenerator[zbx.History](zabbix)
-			obs[zbx.HISTORY] = &hs
-		case zbx.TREND:
-			ts := subject.NewSubject[zbx.Trend]()
-			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
-			obs[zbx.TREND] = &ts
-		default:
-			fmt.Printf("Not supported export: %s", v)
-		}
-	}
-	return
-}
 
 func main() {
 
-	C := ParseCrapageConfig("./crapage.yaml")
+	C := zms.ParseZMSConfig("/etc/zms/zms.yaml")
 	c, _ := zbx.ParseZabbixConfig(C.ServerConfig)
 
-	subjects := MkSubjects(c)
+	subjects := subject.MkSubjects(c)
 
 	for _, o := range C.Targets {
 		for k, v := range subjects {

@@ -1,6 +1,6 @@
 package observer
 
-import "szuro.net/crapage/zbx"
+import "szuro.net/zms/zbx"
 
 type Observer interface {
 	GetName() string

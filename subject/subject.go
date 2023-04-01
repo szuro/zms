@@ -1,8 +1,10 @@
 package subject
 
 import (
-	"szuro.net/crapage/observer"
-	"szuro.net/crapage/zbx"
+	"fmt"
+
+	"szuro.net/zms/observer"
+	"szuro.net/zms/zbx"
 )
 
 type Subjecter interface {
@@ -54,4 +56,23 @@ func (bs *Subject[T]) AcceptValues() {
 			bs.values = nil
 		}
 	}
+}
+
+func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]Subjecter) {
+	obs = make(map[string]Subjecter)
+	for _, v := range zabbix.ExportTypes {
+		switch v {
+		case zbx.HISTORY:
+			hs := NewSubject[zbx.History]()
+			hs.Funnel = zbx.FileReaderGenerator[zbx.History](zabbix)
+			obs[zbx.HISTORY] = &hs
+		case zbx.TREND:
+			ts := NewSubject[zbx.Trend]()
+			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
+			obs[zbx.TREND] = &ts
+		default:
+			fmt.Printf("Not supported export: %s", v)
+		}
+	}
+	return
 }

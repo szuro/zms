@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
-	"szuro.net/crapage/zbx"
+	"szuro.net/zms/zbx"
 )
 
 type HistoryEntity struct {
