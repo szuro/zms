@@ -1,4 +1,4 @@
-module szuro.net/crapage
+module szuro.net/zms
 
 go 1.19
 
