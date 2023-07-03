@@ -1,5 +1,7 @@
 package zbx
 
+import "encoding/json"
+
 const (
 	HISTORY_EXPORT  string = "history-history-syncer-%d.ndjson"
 	HISTORY_MAIN    string = "history-main-process-0.ndjson"
@@ -40,7 +42,7 @@ type History struct {
 	Name   string
 	Clock  int `json:"clock"`
 	Ns     int
-	Value  string `json:"value"`
+	Value  json.Token `json:"value"`
 	Type   int
 }
 
