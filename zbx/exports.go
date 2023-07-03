@@ -43,7 +43,12 @@ type History struct {
 	Clock  int `json:"clock"`
 	Ns     int
 	Value  json.Token `json:"value"`
+	Tags   []Tag      `json:"item_tags"`
 	Type   int
+}
+
+func (h History) ShowTags() []Tag {
+	return h.Tags
 }
 
 type Trend struct {
@@ -53,7 +58,12 @@ type Trend struct {
 	Clock         int
 	Count         int
 	Min, Max, Avg float64
+	Tags          []Tag `json:"item_tags"`
 	Type          int
+}
+
+func (t Trend) ShowTags() []Tag {
+	return t.Tags
 }
 
 type Event struct {
@@ -69,6 +79,11 @@ type Event struct {
 	Tags     []Tag    `json:"tags,omitempty"`
 }
 
+func (e Event) ShowTags() []Tag {
+	return e.Tags
+}
+
 type Export interface {
 	History | Trend | Event
+	ShowTags() []Tag
 }

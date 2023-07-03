@@ -28,6 +28,7 @@ func main() {
 	}
 
 	for _, v := range subjects {
+		v.SetFilter(C.TagFilter)
 		go v.AcceptValues()
 	}
 

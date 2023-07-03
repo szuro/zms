@@ -5,6 +5,7 @@ import (
 
 	"szuro.net/zms/observer"
 	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms"
 )
 
 type Subjecter interface {
@@ -12,15 +13,17 @@ type Subjecter interface {
 	Register(observer observer.Observer)
 	Deregister(observer observer.Observer)
 	NotifyAll()
+	SetFilter(filter zms.Filter)
 }
 
 type ObserverRegistry map[string]observer.Observer
 
 type Subject[T zbx.Export] struct {
-	observers ObserverRegistry
-	values    []T
-	buffer    int
-	Funnel    chan any
+	observers    ObserverRegistry
+	values       []T
+	buffer       int
+	Funnel       chan any
+	globalFilter zms.Filter
 }
 
 func NewSubject[t zbx.Export]() (s Subject[t]) {
@@ -50,12 +53,19 @@ func (bs *Subject[T]) NotifyAll() {
 func (bs *Subject[T]) AcceptValues() {
 	for h := range bs.Funnel {
 		v := h.(T)
+		if !bs.globalFilter.EvaluateFilter(v.ShowTags()) {
+			continue
+		}
 		bs.values = append(bs.values, v)
 		if len(bs.values) >= bs.buffer {
 			bs.NotifyAll()
 			bs.values = nil
 		}
 	}
+}
+
+func (bs *Subject[T]) SetFilter(filter zms.Filter) {
+	bs.globalFilter = filter
 }
 
 func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]Subjecter) {
