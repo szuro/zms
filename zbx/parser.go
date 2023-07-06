@@ -2,14 +2,15 @@ package zbx
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 
 	"github.com/nxadm/tail"
 )
 
-func parseHistoryLine(line *tail.Line) (h History) {
-	err := json.Unmarshal([]byte(line.Text), &h)
+func parseHistoryLine(line *tail.Line) (h History, err error) {
+	err = json.Unmarshal([]byte(line.Text), &h)
 	if err != nil {
 		if h.Type == FLOAT && h.Value == "" {
 			h.Value = "0.0"
@@ -20,12 +21,12 @@ func parseHistoryLine(line *tail.Line) (h History) {
 	return
 }
 
-func parseTrendLine(line *tail.Line) (t Trend) {
-	json.Unmarshal([]byte(line.Text), &t)
+func parseTrendLine(line *tail.Line) (t Trend, err error) {
+	err = json.Unmarshal([]byte(line.Text), &t)
 	return
 }
 
-func parseLine[T Export](line *tail.Line) any {
+func parseLine[T Export](line *tail.Line) (any, error) {
 	var t T
 	switch any(t).(type) {
 	case History:
@@ -33,7 +34,7 @@ func parseLine[T Export](line *tail.Line) any {
 	case Trend:
 		return parseTrendLine(line)
 	}
-	return nil
+	return nil, errors.New("not a supported export type")
 }
 
 func getBasePath[T Export]() (p string) {
@@ -59,7 +60,11 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 				return
 			}
 			for line := range t.Lines {
-				c <- parseLine[T](line)
+				parsed, err := parseLine[T](line)
+				if err != nil {
+					continue
+				}
+				c <- parsed
 			}
 			t.Wait()
 		}()
