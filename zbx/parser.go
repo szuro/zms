@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
 
 	"github.com/nxadm/tail"
@@ -54,11 +55,14 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 	for i := 1; i <= zbx.DBSyncers; i++ {
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
 		go func() {
+			log.Printf("Opening %s...\n", filename)
 			t, err := tail.TailFile(
 				filename, tail.Config{Follow: true, ReOpen: true})
 			if err != nil {
+				log.Printf("Fail! Could not open %s. Error: %s\n", filename, err)
 				return
 			}
+			log.Printf("Success! %s opened. Parsing...\n", filename)
 			for line := range t.Lines {
 				parsed, err := parseLine[T](line)
 				if err != nil {

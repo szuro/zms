@@ -3,6 +3,7 @@ package zbx
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -47,6 +48,10 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 			}
 		}
 	}
+
+	log.Println("Detected configuraion:")
+	log.Printf("  ExportDir=%s\n", conf.ExportDir)
+	log.Printf("  Syncers=%d\n", conf.DBSyncers)
 
 	return
 }
