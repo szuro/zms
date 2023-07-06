@@ -1,10 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"golang.org/x/exp/slices"
 	"szuro.net/zms/subject"
@@ -14,22 +17,33 @@ import (
 
 func main() {
 
-	C := zms.ParseZMSConfig("/etc/zms/zms.yaml")
-	c, _ := zbx.ParseZabbixConfig(C.ServerConfig)
+	zmsPath := flag.String("c", "/etc/zms/zms.yaml", "Path of config file")
+	flag.Parse()
 
-	subjects := subject.MkSubjects(c)
+	zmsConfig := zms.ParseZMSConfig(*zmsPath)
+	zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
 
-	for _, o := range C.Targets {
-		for k, v := range subjects {
-			if slices.Contains(o.Source, k) {
-				v.Register(o.ToObserver())
+	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
+		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
+		time.Sleep(delay * time.Second)
+		delay, isActive = zbx.GetHaStatus(zbxConfig)
+	}
+
+	log.Println("Node is active, listing files")
+
+	subjects := subject.MkSubjects(zbxConfig)
+
+	for _, target := range zmsConfig.Targets {
+		for name, subject := range subjects {
+			if slices.Contains(target.Source, name) {
+				subject.Register(target.ToObserver())
 			}
 		}
 	}
 
-	for _, v := range subjects {
-		v.SetFilter(C.TagFilter)
-		go v.AcceptValues()
+	for _, subject := range subjects {
+		subject.SetFilter(zmsConfig.TagFilter)
+		go subject.AcceptValues()
 	}
 
 	sig := make(chan os.Signal, 1)

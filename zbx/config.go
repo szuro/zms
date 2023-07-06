@@ -2,6 +2,7 @@ package zbx
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -9,29 +10,40 @@ import (
 	//	"path/filepath"
 )
 
-var ZbxRegex = regexp.MustCompile("^(StartDBSyncers|ExportDir|ExportType)=(.*)$")
+var ZbxRegex = regexp.MustCompile("^(StartDBSyncers|ExportDir|ExportType|HANodeName)=(.*)$")
 
 type ZabbixConf struct {
+	configPath  string
 	ExportDir   string
 	ExportTypes []string
 	DBSyncers   int
+	NodeName    string
 }
 
 func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
-	file, _ := os.Open(path)
+	conf.configPath = path
+
+	file, err := os.Open(path)
+	if err != nil {
+		panic(fmt.Sprintf("Could not open file: %s", err))
+	}
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		configLine := scanner.Text()
 		line := ZbxRegex.FindStringSubmatch(configLine)
+		option := line[1]
+		value := line[2]
 		if line != nil {
-			switch line[1] {
+			switch option {
 			case "ExportDir":
-				conf.ExportDir = line[2]
+				conf.ExportDir = value
 			case "ExportType":
-				conf.ExportTypes = strings.Split(line[2], ",")
+				conf.ExportTypes = strings.Split(value, ",")
 			case "StartDBSyncers":
-				conf.DBSyncers, _ = strconv.Atoi(line[2])
+				conf.DBSyncers, _ = strconv.Atoi(value)
+			case "HANodeName":
+				conf.NodeName = value
 			}
 		}
 	}
