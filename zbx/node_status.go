@@ -11,6 +11,7 @@ import (
 
 const HEADER_LEN = 3
 const INITIAL_SYNC = "Cannot perform specified runtime control command during initial configuration cache sync"
+const NON_ACTIVE = "Runtime commands can be executed only in active mode"
 
 func GetFailoverDelay(input string) time.Duration {
 	re := regexp.MustCompile(`Failover delay: (?P<delay>\d+) seconds`)
@@ -47,11 +48,18 @@ func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
 	}
 
 	lines := strings.Split(outString, "\n")
-	delay = GetFailoverDelay(lines[0])
 
 	if len(lines) == HEADER_LEN {
 		log.Println("Node running in standalone mode")
 		nodeIsActive = true
+	}
+
+	if strings.TrimRight(lines[0], "\n") == NON_ACTIVE {
+		log.Println("Node in non-active mode, defaulting to delay=60")
+		delay = time.Duration(60)
+		return
+	} else {
+		delay = GetFailoverDelay(lines[0])
 	}
 
 	for _, line := range lines[HEADER_LEN:] {

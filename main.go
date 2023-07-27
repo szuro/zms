@@ -17,7 +17,7 @@ import (
 
 func main() {
 
-	zmsPath := flag.String("c", "/etc/zms/zms.yaml", "Path of config file")
+	zmsPath := flag.String("c", "/etc/zmsd.yaml", "Path of config file")
 	flag.Parse()
 
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
