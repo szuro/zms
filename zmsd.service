@@ -1,0 +1,14 @@
+[Unit]
+Description=Zabbix Metric Shipper
+After=network.target
+Requires=zabbix-server.service
+
+[Service]
+Restart=always
+Type=simple
+ExecStart=zmsd -c $ZMSD_CONFIG
+Environment='ZMSD_CONFIG=/etc/zmsd.yaml'
+User=zabbix
+
+[Install]
+WantedBy=multi-user.target
