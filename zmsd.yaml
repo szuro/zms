@@ -1,0 +1,20 @@
+# This is an example of a configuration file.
+# Please configure any targets that you wish to push data to.
+# Note that not all targets support every source.
+#
+# server_config: /etc/zabbix/zabbix_server.conf
+# tag_filters:
+#   accepted:
+#   - tag: <name>
+#     value: <value>
+#   rejected:
+#   - tag: <name>
+#     value: <value>
+# targets:
+# - name: <unique_name>
+#   type: pushgateway|azuretable|print
+#   connection: <connectionstring>
+#   source:
+#   - history
+#   - trends
+#   - events

@@ -34,9 +34,9 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 		configLine := scanner.Text()
 		line := ZbxRegex.FindStringSubmatch(configLine)
 		if line != nil {
-			option := line[1]
+			parameter := line[1]
 			value := line[2]
-			switch option {
+			switch parameter {
 			case "ExportDir":
 				conf.ExportDir = value
 			case "ExportType":

@@ -28,7 +28,7 @@ type Subject[T zbx.Export] struct {
 
 func NewSubject[t zbx.Export]() (s Subject[t]) {
 	s.observers = make(ObserverRegistry)
-	s.buffer = 2
+	s.buffer = 100
 	return s
 }
 

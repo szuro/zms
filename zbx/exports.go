@@ -41,6 +41,7 @@ type History struct {
 	ItemID int   `json:"itemid"`
 	Name   string
 	Clock  int `json:"clock"`
+	Groups []string
 	Ns     int
 	Value  json.Token `json:"value"`
 	Tags   []Tag      `json:"item_tags"`
@@ -57,6 +58,7 @@ type Trend struct {
 	Name          string
 	Clock         int
 	Count         int
+	Groups        []string
 	Min, Max, Avg float64
 	Tags          []Tag `json:"item_tags"`
 	Type          int
