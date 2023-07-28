@@ -15,6 +15,8 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 		obs = observer.NewPrint(t.Name, t.Connection)
 	case "azuretable":
 		obs = observer.NewAzureTable(t.Name, t.Connection)
+	case "pushgateway":
+		obs = observer.NewPushGatewayManager(t.Name, t.Connection)
 	}
 
 	return obs
