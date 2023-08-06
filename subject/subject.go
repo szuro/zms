@@ -15,6 +15,7 @@ type Subjecter interface {
 	NotifyAll()
 	SetFilter(filter zms.Filter)
 	Cleanup()
+	SetBuffer(size int)
 }
 
 type ObserverRegistry map[string]observer.Observer
@@ -27,9 +28,12 @@ type Subject[T zbx.Export] struct {
 	globalFilter zms.Filter
 }
 
+func (s *Subject[T]) SetBuffer(size int) {
+	s.buffer = size
+}
+
 func NewSubject[t zbx.Export]() (s Subject[t]) {
 	s.observers = make(ObserverRegistry)
-	s.buffer = 100
 	return s
 }
 
@@ -47,7 +51,7 @@ func (bs *Subject[T]) NotifyAll() {
 		switch any(t).(type) {
 		case zbx.History:
 			h := any(bs.values).([]zbx.History)
-			v.SaveHistory(h)
+			go v.SaveHistory(h)
 		}
 	}
 }
@@ -75,7 +79,7 @@ func (bs *Subject[T]) Cleanup() {
 	}
 }
 
-func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]Subjecter) {
+func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter) {
 	obs = make(map[string]Subjecter)
 	for _, v := range zabbix.ExportTypes {
 		switch v {
@@ -90,6 +94,10 @@ func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]Subjecter) {
 		default:
 			fmt.Printf("Not supported export: %s", v)
 		}
+	}
+
+	for _, subject := range obs {
+		subject.SetBuffer(bufferSize)
 	}
 	return
 }

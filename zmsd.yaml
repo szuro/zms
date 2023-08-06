@@ -3,6 +3,7 @@
 # Note that not all targets support every source.
 #
 # server_config: /etc/zabbix/zabbix_server.conf
+# buffer_size: 100
 # tag_filters:
 #   accepted:
 #   - tag: <name>
