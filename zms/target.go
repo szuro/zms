@@ -1,6 +1,10 @@
 package zms
 
-import "szuro.net/zms/observer"
+import (
+	"fmt"
+
+	"szuro.net/zms/observer"
+)
 
 type Target struct {
 	Name       string
@@ -17,6 +21,10 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 		obs = observer.NewAzureTable(t.Name, t.Connection)
 	case "pushgateway":
 		obs = observer.NewPushGatewayManager(t.Name, t.Connection)
+	case "gcp_cloud_monitor":
+		obs = observer.NewCloudMonitor(t.Name, t.Connection)
+	default:
+		panic(fmt.Sprintf("Target not supported: %s", t.Type))
 	}
 
 	return obs
