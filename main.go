@@ -51,6 +51,11 @@ func main() {
 	for {
 		switch <-sig {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
+
+			for _, subject := range subjects {
+				subject.Cleanup()
+			}
+
 			fmt.Print("Exiting...")
 			return
 		default:

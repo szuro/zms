@@ -14,6 +14,7 @@ type Subjecter interface {
 	Deregister(observer observer.Observer)
 	NotifyAll()
 	SetFilter(filter zms.Filter)
+	Cleanup()
 }
 
 type ObserverRegistry map[string]observer.Observer
@@ -66,6 +67,12 @@ func (bs *Subject[T]) AcceptValues() {
 
 func (bs *Subject[T]) SetFilter(filter zms.Filter) {
 	bs.globalFilter = filter
+}
+
+func (bs *Subject[T]) Cleanup() {
+	for _, observer := range bs.observers {
+		observer.Cleanup()
+	}
 }
 
 func MkSubjects(zabbix zbx.ZabbixConf) (obs map[string]Subjecter) {
