@@ -31,7 +31,7 @@ func main() {
 
 	log.Println("Node is active, listing files")
 
-	subjects := subject.MkSubjects(zbxConfig)
+	subjects := subject.MkSubjects(zbxConfig, zmsConfig.BufferSize)
 
 	for _, target := range zmsConfig.Targets {
 		for name, subject := range subjects {
