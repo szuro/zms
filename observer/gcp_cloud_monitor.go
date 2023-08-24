@@ -36,6 +36,9 @@ func NewCloudMonitor(name, file string) (cm *CloudMonitor) {
 
 	cm.ctx = context.Background()
 	creds, err := google.FindDefaultCredentials(cm.ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
 
 	cm.projectID = "projects/" + creds.ProjectID
 	cm.client, err = monitoring.NewMetricClient(cm.ctx, option.WithCredentialsJSON(creds.JSON))
@@ -55,30 +58,16 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
 			continue
 		}
-		if val, ok := metrics[hist.ItemID]; ok {
-			val.Points = append(val.Points, itemToPoint(hist))
-		} else {
-			metrics[hist.ItemID] = newTimeSeries(cm.resource, hist)
+		if _, ok := metrics[hist.ItemID]; ok {
+			// val.Points = append(val.Points, itemToPoint(hist))
+			// timeSerier requires only one data point. Push instead of appending.
+			pushTimeSeries(cm, &metrics)
 		}
+		metrics[hist.ItemID] = newTimeSeries(cm.resource, hist)
+
 	}
 
-	var ts []*monitoringpb.TimeSeries
-
-	for _, value := range metrics {
-		ts = append(ts, value)
-	}
-
-	req := &monitoringpb.CreateTimeSeriesRequest{
-		Name:       cm.projectID,
-		TimeSeries: ts,
-	}
-
-	err := cm.client.CreateTimeSeries(cm.ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-		log.Println(err)
-		return false
-	}
+	pushTimeSeries(cm, &metrics)
 
 	return true
 }
@@ -143,4 +132,25 @@ func newTimeSeries(resource *monitoredres.MonitoredResource, item zbx.History) (
 		Resource: resource,
 	}
 	return
+}
+
+func pushTimeSeries(cm *CloudMonitor, metrics *map[int]*monitoringpb.TimeSeries) {
+	var ts []*monitoringpb.TimeSeries
+
+	for _, value := range *metrics {
+		ts = append(ts, value)
+	}
+
+	req := &monitoringpb.CreateTimeSeriesRequest{
+		Name:       cm.projectID,
+		TimeSeries: ts,
+	}
+
+	err := cm.client.CreateTimeSeries(cm.ctx, req)
+	if err != nil {
+		log.Println(err)
+	}
+
+	//clear
+	*metrics = make(map[int]*monitoringpb.TimeSeries, 0)
 }
