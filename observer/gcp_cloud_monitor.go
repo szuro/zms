@@ -63,10 +63,11 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
 			continue
 		}
-		if val, ok := metrics[hist.ItemID]; ok {
-			val.Points = append(val.Points, itemToPoint(hist))
-		} else {
+		if _, ok := metrics[hist.ItemID]; !ok {
 			metrics[hist.ItemID] = newTimeSeries(cm.resource, hist)
+		} else {
+			// Only one point can be written per TimeSeries per request.
+			metrics[hist.ItemID].Points = []*monitoringpb.Point{itemToPoint(hist)}
 		}
 	}
 
