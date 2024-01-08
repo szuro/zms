@@ -23,6 +23,9 @@ type ZabbixConf struct {
 
 func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 	conf.configPath = path
+	// zabbix_server.conf defaults
+	conf.DBSyncers = 4
+	conf.ExportTypes = []string{"history", "trends", "events"}
 
 	file, err := os.Open(path)
 	if err != nil {
