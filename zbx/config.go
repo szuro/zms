@@ -52,6 +52,7 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 	log.Println("Detected configuraion:")
 	log.Printf("  ExportDir=%s\n", conf.ExportDir)
 	log.Printf("  Syncers=%d\n", conf.DBSyncers)
+	syncerGauge.Set(float64(conf.DBSyncers))
 
 	return
 }
