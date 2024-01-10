@@ -13,6 +13,10 @@ import (
 	"szuro.net/zms/subject"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
+
+	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -45,6 +49,9 @@ func main() {
 		subject.SetFilter(zmsConfig.TagFilter)
 		go subject.AcceptValues()
 	}
+
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2020", nil)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
