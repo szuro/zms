@@ -27,6 +27,11 @@ func main() {
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
 	zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
 
+	if zbxConfig.ExportDir == "" {
+		log.Println("Export not enabled. Aborting.")
+		return
+	}
+
 	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
 		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
 		time.Sleep(delay * time.Second)
