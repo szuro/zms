@@ -3,7 +3,6 @@ package observer
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
@@ -15,6 +14,7 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"golang.org/x/oauth2/google"
 
 	"google.golang.org/api/option"
@@ -52,8 +52,36 @@ func NewCloudMonitor(name, file string) (cm *CloudMonitor) {
 	}
 
 	createHistoryMetric(cm.projectID)
+	cm.monitor.initObserverMetrics("gcp_cloud_monitor", name)
 
 	return
+}
+
+func (cm *CloudMonitor) sentHistory(metrics map[int]*monitoringpb.TimeSeries) {
+	var ts []*monitoringpb.TimeSeries
+	for _, value := range metrics {
+		ts = append(ts, value)
+	}
+	l := float64(len(ts))
+	cm.monitor.historyValuesSent.Add(l)
+
+	req := &monitoringpb.CreateTimeSeriesRequest{
+		Name:       cm.projectID,
+		TimeSeries: ts,
+	}
+	err := cm.client.CreateTimeSeries(cm.ctx, req)
+
+	if aErr, ok := apierror.FromError(err); ok {
+		details := aErr.Details()
+		if len(details.Unknown) > 0 {
+			summary := details.Unknown[0].(*monitoringpb.CreateTimeSeriesSummary)
+			fails := summary.TotalPointCount - summary.SuccessPointCount
+			cm.monitor.historyValuesFailed.Add(float64(fails))
+		}
+	} else {
+		//assuming all is lost
+		cm.monitor.historyValuesFailed.Add(l)
+	}
 }
 
 func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
@@ -63,30 +91,19 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
 			continue
 		}
+
 		if _, ok := metrics[hist.ItemID]; !ok {
 			metrics[hist.ItemID] = newTimeSeries(cm.resource, hist)
 		} else {
-			// Only one point can be written per TimeSeries per request.
-			metrics[hist.ItemID].Points = []*monitoringpb.Point{itemToPoint(hist)}
+			//sent and clear
+			cm.sentHistory(metrics)
+			metrics = make(map[int]*monitoringpb.TimeSeries, 0)
 		}
 	}
 
-	var ts []*monitoringpb.TimeSeries
-
-	for _, value := range metrics {
-		ts = append(ts, value)
-	}
-
-	req := &monitoringpb.CreateTimeSeriesRequest{
-		Name:       cm.projectID,
-		TimeSeries: ts,
-	}
-
-	err := cm.client.CreateTimeSeries(cm.ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-		log.Println(err)
-		return false
+	//sent leftovers
+	if len(metrics) > 0 {
+		cm.sentHistory(metrics)
 	}
 
 	return true

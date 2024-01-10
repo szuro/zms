@@ -26,6 +26,9 @@ func NewPrint(name, out string) (p *Print) {
 	} else {
 		p.out = os.Stdout
 	}
+
+	p.monitor.initObserverMetrics("print", name)
+
 	return
 }
 
@@ -33,6 +36,7 @@ func (p *Print) SaveHistory(h []zbx.History) bool {
 	for _, H := range h {
 		msg := fmt.Sprintf("Host: %s; Item: %s; Time: %d; Value: %s", H.Host.Host, H.Name, H.Clock, H.Value)
 		fmt.Fprintln(p.out, msg)
+		p.monitor.historyValuesSent.Inc()
 	}
 	return true
 }
@@ -44,6 +48,7 @@ func (p *Print) SaveTrends(t []zbx.Trend) bool {
 			T.Host.Host, T.Name, T.Clock, T.Min, T.Max, T.Avg,
 		)
 		fmt.Fprintln(p.out, msg)
+		p.monitor.trendsValuesSent.Inc()
 	}
 	return true
 }
