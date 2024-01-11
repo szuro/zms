@@ -101,7 +101,7 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 				parsedCounter.Inc()
 				if err != nil {
 					parsedErrorCounter.Inc()
-					log.Printf("Failed to parse line '%s'\n", line.Text)
+					log.Printf("Parsing failed line #%d in %s. Contents: '%s'\n", line.Num, filename, line.Text)
 					continue
 				}
 				c <- parsed
