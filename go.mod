@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.0.2
+	github.com/googleapis/gax-go/v2 v2.11.0
 	github.com/nxadm/tail v1.4.8
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
 	golang.org/x/oauth2 v0.8.0
@@ -18,7 +19,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
-	github.com/googleapis/gax-go/v2 v2.11.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	go.opencensus.io v0.24.0 // indirect

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strconv"
 
 	"github.com/nxadm/tail"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 func parseHistoryLine(line *tail.Line) (h History, err error) {
@@ -50,12 +53,42 @@ func getBasePath[T Export]() (p string) {
 	return
 }
 
+func getExportName[T Export]() (n string) {
+	var t T
+	switch any(t).(type) {
+	case History:
+		n = "history"
+	case Trend:
+		n = "trends"
+	}
+
+	return
+}
+
 func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 	c = make(chan any, 100)
 	for i := 1; i <= zbx.DBSyncers; i++ {
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
-		go func() {
+		file_type := getExportName[T]()
+		go func(filename string, file_index int, file_type string) {
 			log.Printf("Opening %s...\n", filename)
+
+			labels := prometheus.Labels{
+				"file_index":  strconv.Itoa(file_index),
+				"export_type": file_type,
+			}
+
+			parsedCounter := promauto.NewCounter(prometheus.CounterOpts{
+				Name:        "zms_lines_parsed_total",
+				Help:        "The total number of processed lines",
+				ConstLabels: labels,
+			})
+			parsedErrorCounter := promauto.NewCounter(prometheus.CounterOpts{
+				Name:        "zms_lines_invalid_total",
+				Help:        "The total number of lines with invalid data",
+				ConstLabels: labels,
+			})
+
 			t, err := tail.TailFile(
 				filename, tail.Config{Follow: true, ReOpen: true})
 			if err != nil {
@@ -65,13 +98,16 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 			log.Printf("Success! %s opened. Parsing...\n", filename)
 			for line := range t.Lines {
 				parsed, err := parseLine[T](line)
+				parsedCounter.Inc()
 				if err != nil {
+					parsedErrorCounter.Inc()
+					log.Printf("Parsing failed line #%d in %s. Contents: '%s'\n", line.Num, filename, line.Text)
 					continue
 				}
 				c <- parsed
 			}
 			t.Wait()
-		}()
+		}(filename, i, file_type)
 	}
 
 	return

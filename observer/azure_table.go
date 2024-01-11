@@ -37,6 +37,7 @@ func NewAzureTable(name, conn string) (client *AzureTable) {
 	client.h = service.NewClient("history")
 	client.t = service.NewClient("trends")
 	// client.e = service.NewClient("events")
+	client.monitor.initObserverMetrics("azure_table", name)
 
 	return
 }
@@ -54,7 +55,11 @@ func (az *AzureTable) SaveHistory(h []zbx.History) bool {
 		}
 		entity.Host = nil
 		marshalled, _ := json.Marshal(entity)
-		az.h.AddEntity(context.TODO(), marshalled, nil)
+		_, err := az.h.AddEntity(context.TODO(), marshalled, nil)
+		az.monitor.historyValuesSent.Inc()
+		if err != nil {
+			az.monitor.historyValuesFailed.Inc()
+		}
 	}
 	return true
 }
@@ -72,7 +77,11 @@ func (az *AzureTable) SaveTrends(t []zbx.Trend) bool {
 		}
 		entity.Host = nil
 		marshalled, _ := json.Marshal(entity)
-		az.t.AddEntity(context.TODO(), marshalled, nil)
+		_, err := az.t.AddEntity(context.TODO(), marshalled, nil)
+		az.monitor.trendsValuesSent.Inc()
+		if err != nil {
+			az.monitor.trendsValuesFailed.Inc()
+		}
 	}
 	return true
 }

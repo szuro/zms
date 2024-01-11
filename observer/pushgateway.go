@@ -30,6 +30,7 @@ func NewPushGatewayManager(name, url string) *PushGatewayManager {
 		url: url,
 	}
 	pgm.SetName(name)
+	pgm.monitor.initObserverMetrics("pushgateway", name)
 
 	return &pgm
 }
@@ -47,7 +48,9 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 
 	pgm.gateways.Range(func(key, value interface{}) bool {
 		err := value.(PushGateway).pusher.Add()
+		pgm.monitor.historyValuesSent.Inc()
 		if err != nil {
+			pgm.monitor.historyValuesFailed.Inc()
 			log.Println(err)
 		}
 		return true
