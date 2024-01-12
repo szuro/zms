@@ -4,6 +4,9 @@
 #
 # server_config: /etc/zabbix/zabbix_server.conf
 # buffer_size: 100
+# http:
+#   listen_address: localhost
+#   listen_port: 2020
 # tag_filters:
 #   accepted:
 #   - tag: <name>
