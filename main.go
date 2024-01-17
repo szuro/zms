@@ -56,7 +56,9 @@ func main() {
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2020", nil)
+
+	listen := fmt.Sprintf("%s:%d", zmsConfig.Http.ListenAddress, zmsConfig.Http.ListenPort)
+	http.ListenAndServe(listen, nil)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

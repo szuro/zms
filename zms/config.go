@@ -9,8 +9,14 @@ import (
 type ZMSConf struct {
 	ServerConfig string `yaml:"server_config"`
 	Targets      []Target
-	TagFilter    Filter `yaml:"tag_filters"`
-	BufferSize   int    `yaml:"buffer_size"`
+	TagFilter    Filter   `yaml:"tag_filters"`
+	BufferSize   int      `yaml:"buffer_size"`
+	Http         HTTPConf `yaml:"http"`
+}
+
+type HTTPConf struct {
+	ListenPort    int    `yaml:"listen_port"`
+	ListenAddress string `yaml:"listen_address"`
 }
 
 func ParseZMSConfig(path string) (conf ZMSConf) {
@@ -30,6 +36,10 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 
 	if len(conf.TagFilter.AcceptedTags) != 0 || len(conf.TagFilter.RejectedTags) != 0 {
 		conf.TagFilter.Activate()
+	}
+
+	if conf.Http.ListenPort == 0 {
+		conf.Http.ListenPort = 2020
 	}
 
 	return

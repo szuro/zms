@@ -53,23 +53,12 @@ func getBasePath[T Export]() (p string) {
 	return
 }
 
-func getExportName[T Export]() (n string) {
-	var t T
-	switch any(t).(type) {
-	case History:
-		n = "history"
-	case Trend:
-		n = "trends"
-	}
-
-	return
-}
-
 func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
+	var t T
 	c = make(chan any, 100)
 	for i := 1; i <= zbx.DBSyncers; i++ {
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
-		file_type := getExportName[T]()
+		file_type := t.GetExportName()
 		go func(filename string, file_index int, file_type string) {
 			log.Printf("Opening %s...\n", filename)
 

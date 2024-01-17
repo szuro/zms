@@ -3,6 +3,8 @@ package subject
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/observer"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
@@ -21,15 +23,35 @@ type Subjecter interface {
 type ObserverRegistry map[string]observer.Observer
 
 type Subject[T zbx.Export] struct {
-	observers    ObserverRegistry
-	values       []T
-	buffer       int
-	Funnel       chan any
-	globalFilter zms.Filter
+	observers        ObserverRegistry
+	values           []T
+	buffer           int
+	Funnel           chan any
+	globalFilter     zms.Filter
+	bufferSizeGauge  prometheus.Gauge
+	bufferUsageGauge prometheus.Gauge
 }
 
 func (s *Subject[T]) SetBuffer(size int) {
 	s.buffer = size
+
+	var t T
+	exportyType := t.GetExportName()
+	bufferLabels := prometheus.Labels{"export_type": exportyType}
+
+	s.bufferSizeGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Name:        "zms_buffer_size",
+		Help:        "Size of internal ZMS buffer",
+		ConstLabels: bufferLabels,
+	})
+	s.bufferSizeGauge.Set(float64(size))
+
+	s.bufferUsageGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Name:        "zms_buffer_usage",
+		Help:        "Values in internal ZMS buffer",
+		ConstLabels: bufferLabels,
+	})
+	s.bufferUsageGauge.Set(0)
 }
 
 func NewSubject[t zbx.Export]() (s Subject[t]) {
@@ -62,9 +84,14 @@ func (bs *Subject[T]) AcceptValues() {
 			continue
 		}
 		bs.values = append(bs.values, v)
-		if len(bs.values) >= bs.buffer {
+		usage := len(bs.values)
+
+		bs.bufferUsageGauge.Set(float64(usage))
+
+		if usage >= bs.buffer {
 			bs.NotifyAll()
 			bs.values = nil
+			bs.bufferUsageGauge.Set(0)
 		}
 	}
 }

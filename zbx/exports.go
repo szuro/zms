@@ -36,6 +36,12 @@ type Tag struct {
 	Value string `json:"value"`
 }
 
+type Export interface {
+	History | Trend | Event
+	ShowTags() []Tag
+	GetExportName() string
+}
+
 type History struct {
 	Host   *Host `json:"host,omitempty"`
 	ItemID int   `json:"itemid"`
@@ -52,6 +58,10 @@ func (h History) ShowTags() []Tag {
 	return h.Tags
 }
 
+func (h History) GetExportName() string {
+	return HISTORY
+}
+
 type Trend struct {
 	Host          *Host `json:"host,omitempty"`
 	ItemID        int   `json:"itemid"`
@@ -66,6 +76,10 @@ type Trend struct {
 
 func (t Trend) ShowTags() []Tag {
 	return t.Tags
+}
+
+func (t Trend) GetExportName() string {
+	return TREND
 }
 
 type Event struct {
@@ -85,7 +99,6 @@ func (e Event) ShowTags() []Tag {
 	return e.Tags
 }
 
-type Export interface {
-	History | Trend | Event
-	ShowTags() []Tag
+func (e Event) GetExportName() string {
+	return EVENT
 }
