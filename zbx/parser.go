@@ -79,11 +79,17 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 			})
 
 			t, err := tail.TailFile(
-				filename, tail.Config{Follow: true, ReOpen: true})
+				filename, tail.Config{
+					Follow:        true,
+					ReOpen:        true,
+					CompleteLines: true,
+				})
+
 			if err != nil {
 				log.Printf("Fail! Could not open %s. Error: %s\n", filename, err)
 				return
 			}
+
 			log.Printf("Success! %s opened. Parsing...\n", filename)
 			for line := range t.Lines {
 				parsed, err := parseLine[T](line)
