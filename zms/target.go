@@ -23,6 +23,8 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 		obs = observer.NewPushGatewayManager(t.Name, t.Connection)
 	case "gcp_cloud_monitor":
 		obs = observer.NewCloudMonitor(t.Name, t.Connection)
+	case "psql":
+		obs = observer.NewPSQL(t.Name, t.Connection)
 	default:
 		panic(fmt.Sprintf("Target not supported: %s", t.Type))
 	}
