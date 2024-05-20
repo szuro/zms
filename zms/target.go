@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"szuro.net/zms/observer"
+	"szuro.net/zms/zms/filter"
 )
 
 type Target struct {
 	Name       string
 	Type       string
 	Connection string
+	TagFilter  filter.Filter `yaml:"tag_filters"`
 	Source     []string
 }
 
@@ -28,6 +30,10 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 	default:
 		panic(fmt.Sprintf("Target not supported: %s", t.Type))
 	}
+
+	filter := t.TagFilter
+	filter.Activate()
+	obs.SetFilter(filter)
 
 	return obs
 }

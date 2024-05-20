@@ -4,14 +4,15 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+	"szuro.net/zms/zms/filter"
 )
 
 type ZMSConf struct {
 	ServerConfig string `yaml:"server_config"`
 	Targets      []Target
-	TagFilter    Filter   `yaml:"tag_filters"`
-	BufferSize   int      `yaml:"buffer_size"`
-	Http         HTTPConf `yaml:"http"`
+	TagFilter    filter.Filter `yaml:"tag_filters"`
+	BufferSize   int           `yaml:"buffer_size"`
+	Http         HTTPConf      `yaml:"http"`
 }
 
 type HTTPConf struct {
@@ -34,9 +35,7 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 		conf.BufferSize = 100
 	}
 
-	if len(conf.TagFilter.AcceptedTags) != 0 || len(conf.TagFilter.RejectedTags) != 0 {
-		conf.TagFilter.Activate()
-	}
+	conf.TagFilter.Activate()
 
 	if conf.Http.ListenPort == 0 {
 		conf.Http.ListenPort = 2020

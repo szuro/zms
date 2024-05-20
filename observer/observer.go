@@ -4,6 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms/filter"
 )
 
 type Observer interface {
@@ -12,11 +13,13 @@ type Observer interface {
 	SetName(name string)
 	SaveHistory(h []zbx.History) bool
 	SaveTrends(t []zbx.Trend) bool
+	SetFilter(filter filter.Filter)
 }
 
 type baseObserver struct {
-	name    string
-	monitor obserwerMetrics
+	name        string
+	monitor     obserwerMetrics
+	localFilter filter.Filter
 }
 
 func (p *baseObserver) GetName() string {
@@ -28,6 +31,10 @@ func (p *baseObserver) SetName(name string) {
 
 func (p *baseObserver) Cleanup() {
 
+}
+
+func (p *baseObserver) SetFilter(filter filter.Filter) {
+	p.localFilter = filter
 }
 
 type obserwerMetrics struct {

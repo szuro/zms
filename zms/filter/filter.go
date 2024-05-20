@@ -1,4 +1,4 @@
-package zms
+package filter
 
 import (
 	"golang.org/x/exp/slices"
@@ -12,7 +12,9 @@ type Filter struct {
 }
 
 func (f *Filter) Activate() {
-	f.active = true
+	if len(f.AcceptedTags) != 0 || len(f.RejectedTags) != 0 {
+		f.active = true
+	}
 }
 
 // Check if value should be accepted or not
