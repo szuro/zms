@@ -32,14 +32,6 @@ func main() {
 		return
 	}
 
-	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
-		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
-		time.Sleep(delay * time.Second)
-		delay, isActive = zbx.GetHaStatus(zbxConfig)
-	}
-
-	log.Println("Node is active, listing files")
-
 	subjects := subject.MkSubjects(zbxConfig, zmsConfig.BufferSize)
 
 	for _, target := range zmsConfig.Targets {
@@ -50,15 +42,23 @@ func main() {
 		}
 	}
 
-	for _, subject := range subjects {
-		subject.SetFilter(zmsConfig.TagFilter)
-		go subject.AcceptValues()
-	}
-
 	http.Handle("/metrics", promhttp.Handler())
 
 	listen := fmt.Sprintf("%s:%d", zmsConfig.Http.ListenAddress, zmsConfig.Http.ListenPort)
 	http.ListenAndServe(listen, nil)
+
+	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
+		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
+		time.Sleep(delay * time.Second)
+		delay, isActive = zbx.GetHaStatus(zbxConfig)
+	}
+
+	log.Println("Node is active, listing files")
+
+	for _, subject := range subjects {
+		subject.SetFilter(zmsConfig.TagFilter)
+		go subject.AcceptValues()
+	}
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
