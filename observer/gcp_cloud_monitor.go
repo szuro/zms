@@ -88,6 +88,9 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 	metrics := make(map[int]*monitoringpb.TimeSeries, 0)
 
 	for _, hist := range h {
+		if !cm.localFilter.EvaluateFilter(hist.Tags) {
+			continue
+		}
 		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
 			continue
 		}

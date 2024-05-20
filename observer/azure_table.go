@@ -44,6 +44,9 @@ func NewAzureTable(name, conn string) (client *AzureTable) {
 
 func (az *AzureTable) SaveHistory(h []zbx.History) bool {
 	for _, H := range h {
+		if !az.localFilter.EvaluateFilter(H.Tags) {
+			continue
+		}
 		entity := HistoryEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(H.ItemID),
@@ -66,6 +69,9 @@ func (az *AzureTable) SaveHistory(h []zbx.History) bool {
 
 func (az *AzureTable) SaveTrends(t []zbx.Trend) bool {
 	for _, T := range t {
+		if !az.localFilter.EvaluateFilter(T.Tags) {
+			continue
+		}
 		entity := TrendEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(T.ItemID),

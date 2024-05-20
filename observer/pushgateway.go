@@ -37,6 +37,9 @@ func NewPushGatewayManager(name, url string) *PushGatewayManager {
 
 func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 	for _, element := range h {
+		if !pgm.localFilter.EvaluateFilter(element.Tags) {
+			continue
+		}
 		hostName := element.Host.Host
 		pushGateway, exists := pgm.gateways.Load(hostName)
 		if !exists {
