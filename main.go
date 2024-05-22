@@ -45,7 +45,7 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 
 	listen := fmt.Sprintf("%s:%d", zmsConfig.Http.ListenAddress, zmsConfig.Http.ListenPort)
-	http.ListenAndServe(listen, nil)
+	go http.ListenAndServe(listen, nil)
 
 	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
 		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
