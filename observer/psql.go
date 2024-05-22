@@ -3,7 +3,7 @@ package observer
 import (
 	"database/sql"
 	"fmt"
-	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 
@@ -21,6 +21,11 @@ func NewPSQL(name, connStr string) (p *PSQL) {
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
+		fmt.Println(fmt.Errorf("failed to connect: %v", err))
+		panic("Cannot connect to DB")
+	}
+	if err := db.Ping(); err != nil {
+		db.Close()
 		panic("Cannot connect to DB")
 	}
 	p.dbConn = db
@@ -33,33 +38,56 @@ func (p *PSQL) Cleanup() {
 	p.dbConn.Close()
 }
 
+func unixToStamp(unix int) (stamp string) {
+	tm := time.Unix(int64(unix), 0)
+	return tm.Format("2006-01-02 15:04:05")
+}
+
 func (p *PSQL) SaveHistory(h []zbx.History) bool {
-	base := "INSERT INTO performance.messages (tagname, value, quality, timestamp, servertimestamp) "
+	base := "INSERT INTO performance.messages (tagname, value, quality, timestamp, servertimestamp) VALUES ($1, $2, $3, $4, $5)"
 
-	inserts := []string{}
-
-	values := []interface{}{}
+	acceptedValues := make([]zbx.History, 0)
 
 	for _, H := range h {
 		if !p.localFilter.EvaluateFilter(H.Tags) {
 			continue
 		}
-		inserts = append(inserts, "(?, ?, ?, ?, ?)")
 
+		acceptedValues = append(acceptedValues, H)
+	}
+
+	if len(acceptedValues) == 0 {
+		return true
+	}
+
+	txn, err := p.dbConn.Begin()
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to begin transaction: %v", err))
+		return false
+	}
+	stmt, err := txn.Prepare(base)
+	if err != nil {
+		txn.Rollback()
+		fmt.Println(fmt.Errorf("failed to prepare statement: %v", err))
+	}
+	defer stmt.Close()
+
+	for _, H := range acceptedValues {
 		tag := fmt.Sprintf("%s.%s.%s", H.Host.Host, H.Host.Host, H.Name)
-		//timestamp: 2024-05-08 16:28:33.000000
-		//H.Value to string H.Value.(string)????
-		values = append(values, tag, H.Value, true, H.Clock, H.Clock)
+		stamp := unixToStamp(H.Clock)
+		_, err := stmt.Exec(tag, H.Value, true, stamp, stamp)
+		if err != nil {
+			txn.Rollback()
+			p.monitor.historyValuesFailed.Inc()
+		}
+
 		p.monitor.historyValuesSent.Inc()
 	}
 
-	base = base + strings.Join(inserts, ",")
-
-	txn, _ := p.dbConn.Begin()
-	stmt, _ := p.dbConn.Prepare(base)
-	stmt.Exec(values...)
-	stmt.Close()
-	txn.Commit()
+	err = txn.Commit()
+	if err != nil {
+		fmt.Println(fmt.Errorf("failed to commit transaction: %v", err))
+	}
 
 	return true
 }
