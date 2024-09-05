@@ -37,7 +37,13 @@ func main() {
 	for _, target := range zmsConfig.Targets {
 		for name, subject := range subjects {
 			if slices.Contains(target.Source, name) {
-				subject.Register(target.ToObserver())
+				t, err := target.ToObserver()
+				if err == nil {
+					subject.Register(t)
+				} else {
+					log.Fatalf("Failed ro register: %s", t.GetName())
+				}
+
 			}
 		}
 	}

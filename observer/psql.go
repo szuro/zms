@@ -3,6 +3,7 @@ package observer
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -15,18 +16,18 @@ type PSQL struct {
 	dbConn *sql.DB
 }
 
-func NewPSQL(name, connStr string) (p *PSQL) {
+func NewPSQL(name, connStr string) (p *PSQL, err error) {
 	p = &PSQL{}
 	p.name = name
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to connect: %v", err))
-		panic("Cannot connect to DB")
+		log.Println(fmt.Errorf("failed to connect: %v", err))
 	}
 	if err := db.Ping(); err != nil {
+		log.Println(fmt.Errorf("failed to connect: %v", err))
 		db.Close()
-		panic("Cannot connect to DB")
+		return nil, err
 	}
 	p.dbConn = db
 

@@ -20,19 +20,19 @@ type PushGatewayManager struct {
 	gateways sync.Map
 }
 
-func NewPushGatewayManager(name, url string) *PushGatewayManager {
-	_, err := url_parser.Parse(url)
+func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error) {
+	_, err = url_parser.Parse(url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	pgm := PushGatewayManager{
+	pgm = &PushGatewayManager{
 		url: url,
 	}
 	pgm.SetName(name)
 	pgm.monitor.initObserverMetrics("pushgateway", name)
 
-	return &pgm
+	return
 }
 
 func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {

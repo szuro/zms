@@ -30,10 +30,13 @@ type AzureTable struct {
 	t *aztables.Client
 }
 
-func NewAzureTable(name, conn string) (client *AzureTable) {
+func NewAzureTable(name, conn string) (client *AzureTable, err error) {
 	client = &AzureTable{}
 	client.name = name
-	service, _ := aztables.NewServiceClientWithNoCredential(conn, nil)
+	service, err := aztables.NewServiceClientWithNoCredential(conn, nil)
+	if err != nil {
+		return nil, err
+	}
 	client.h = service.NewClient("history")
 	client.t = service.NewClient("trends")
 	// client.e = service.NewClient("events")

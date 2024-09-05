@@ -15,18 +15,18 @@ type Target struct {
 	Source     []string
 }
 
-func (t *Target) ToObserver() (obs observer.Observer) {
+func (t *Target) ToObserver() (obs observer.Observer, err error) {
 	switch t.Type {
 	case "print":
 		obs = observer.NewPrint(t.Name, t.Connection)
 	case "azuretable":
-		obs = observer.NewAzureTable(t.Name, t.Connection)
+		obs, err = observer.NewAzureTable(t.Name, t.Connection)
 	case "pushgateway":
-		obs = observer.NewPushGatewayManager(t.Name, t.Connection)
+		obs, err = observer.NewPushGatewayManager(t.Name, t.Connection)
 	case "gcp_cloud_monitor":
-		obs = observer.NewCloudMonitor(t.Name, t.Connection)
+		obs, err = observer.NewCloudMonitor(t.Name, t.Connection)
 	case "psql":
-		obs = observer.NewPSQL(t.Name, t.Connection)
+		obs, err = observer.NewPSQL(t.Name, t.Connection)
 	default:
 		panic(fmt.Sprintf("Target not supported: %s", t.Type))
 	}
@@ -35,5 +35,5 @@ func (t *Target) ToObserver() (obs observer.Observer) {
 	filter.Activate()
 	obs.SetFilter(filter)
 
-	return obs
+	return obs, err
 }
