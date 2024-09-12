@@ -4,19 +4,24 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"szuro.net/zms/zbx"
 )
 
 type PSQL struct {
 	baseObserver
-	dbConn *sql.DB
+	dbConn          *sql.DB
+	idleConnections prometheus.Gauge
+	maxConnections  prometheus.Gauge
+	usedConnections prometheus.Gauge
 }
 
-func NewPSQL(name, connStr string) (p *PSQL, err error) {
+func NewPSQL(name, connStr string, opts map[string]string) (p *PSQL, err error) {
 	p = &PSQL{}
 	p.name = name
 
@@ -29,9 +34,47 @@ func NewPSQL(name, connStr string) (p *PSQL, err error) {
 		db.Close()
 		return nil, err
 	}
+
+	for opt, val := range opts {
+		switch opt {
+		case "max_conn":
+			maxconn, _ := strconv.Atoi(val)
+			db.SetMaxOpenConns(maxconn)
+		case "max_idle":
+			maxconn, _ := strconv.Atoi(val)
+			db.SetMaxIdleConns(maxconn)
+		case "max_conn_time":
+			dur, _ := time.ParseDuration(val)
+			db.SetConnMaxLifetime(dur)
+		case "max_idle_time":
+			dur, _ := time.ParseDuration(val)
+			db.SetConnMaxIdleTime(dur)
+		}
+	}
+
 	p.dbConn = db
 
-	p.monitor.initObserverMetrics("psql", name)
+	observerType := "psql"
+	p.monitor.initObserverMetrics(observerType, name)
+
+	p.idleConnections = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:        "zms_psql_connection_stats",
+		Help:        "Connection stats related to PostgreSQL database",
+		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "conn": "idle"},
+	})
+	p.maxConnections = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:        "zms_psql_connection_stats",
+		Help:        "Connection stats related to PostgreSQL database",
+		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "conn": "max"},
+	})
+
+	p.usedConnections = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:        "zms_psql_connection_stats",
+		Help:        "Connection stats related to PostgreSQL database",
+		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "conn": "used"},
+	})
+
+	p.updateStats()
 
 	return
 }
@@ -56,6 +99,8 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 
 		acceptedValues = append(acceptedValues, H)
 	}
+
+	p.updateStats()
 
 	if len(acceptedValues) == 0 {
 		return true
@@ -90,9 +135,13 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 		fmt.Println(fmt.Errorf("failed to commit transaction: %v", err))
 	}
 
+	p.updateStats()
 	return true
 }
 
-func (p *PSQL) SaveTrends(t []zbx.Trend) bool {
-	panic("Not implemented")
+func (p *PSQL) updateStats() {
+	stats := p.dbConn.Stats()
+	p.idleConnections.Set(float64(stats.Idle))
+	p.usedConnections.Set(float64(stats.InUse))
+	p.maxConnections.Set(float64(stats.MaxOpenConnections))
 }

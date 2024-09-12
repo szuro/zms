@@ -13,6 +13,7 @@ type Target struct {
 	Connection string
 	TagFilter  filter.Filter `yaml:"tag_filters"`
 	Source     []string
+	Options    map[string]string
 }
 
 func (t *Target) ToObserver() (obs observer.Observer, err error) {
@@ -26,7 +27,7 @@ func (t *Target) ToObserver() (obs observer.Observer, err error) {
 	case "gcp_cloud_monitor":
 		obs, err = observer.NewCloudMonitor(t.Name, t.Connection)
 	case "psql":
-		obs, err = observer.NewPSQL(t.Name, t.Connection)
+		obs, err = observer.NewPSQL(t.Name, t.Connection, t.Options)
 	default:
 		panic(fmt.Sprintf("Target not supported: %s", t.Type))
 	}
