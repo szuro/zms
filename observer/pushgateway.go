@@ -62,10 +62,6 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 	return true
 }
 
-func (pgm *PushGatewayManager) SaveTrends(t []zbx.Trend) bool {
-	panic("not implemented")
-}
-
 func (hc HistoryCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(hc, ch)
 }

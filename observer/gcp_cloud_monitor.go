@@ -115,10 +115,6 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 	return true
 }
 
-func (cm *CloudMonitor) SaveTrends(t []zbx.Trend) bool {
-	panic("not implemented") // TODO: Implement
-}
-
 func (cm *CloudMonitor) Cleanup() {
 	cm.client.Close()
 }
