@@ -19,10 +19,26 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var (
+	Version, Commit, BuildDate string
+)
+
+func printVersionInfo() {
+	fmt.Println(fmt.Sprintf("ZMS %s", Version))
+	fmt.Println(fmt.Sprintf("Git commit: %s", Commit))
+	fmt.Println(fmt.Sprintf("Compilation time: %s", BuildDate))
+}
+
 func main() {
 
 	zmsPath := flag.String("c", "/etc/zmsd.yaml", "Path of config file")
+	version := flag.Bool("v", false, "Show version info")
 	flag.Parse()
+
+	if *version {
+		printVersionInfo()
+		os.Exit(0)
+	}
 
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
 	zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
