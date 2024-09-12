@@ -74,6 +74,12 @@ func (bs *Subject[T]) NotifyAll() {
 		case zbx.History:
 			h := any(bs.values).([]zbx.History)
 			go v.SaveHistory(h)
+		case zbx.Trend:
+			t := any(bs.values).([]zbx.Trend)
+			go v.SaveTrends(t)
+		case zbx.Event:
+			e := any(bs.values).([]zbx.Event)
+			go v.SaveEvents(e)
 		}
 	}
 }
@@ -118,6 +124,10 @@ func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter
 			ts := NewSubject[zbx.Trend]()
 			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
 			obs[zbx.TREND] = &ts
+		case zbx.EVENT:
+			ts := NewSubject[zbx.Event]()
+			ts.Funnel = zbx.FileReaderGenerator[zbx.Event](zabbix)
+			obs[zbx.EVENT] = &ts
 		default:
 			fmt.Printf("Not supported export: %s", v)
 		}
