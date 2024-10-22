@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"log"
+	"log/slog"
 	url_parser "net/url"
 	"os"
 	"sync"
@@ -23,6 +23,7 @@ type PushGatewayManager struct {
 func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error) {
 	_, err = url_parser.Parse(url)
 	if err != nil {
+		slog.Error("Failed to parse URL", slog.Any("name", name), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -54,7 +55,7 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 		pgm.monitor.historyValuesSent.Inc()
 		if err != nil {
 			pgm.monitor.historyValuesFailed.Inc()
-			log.Println(err)
+			slog.Error("Failed to ship values", slog.Any("name", pgm.name), slog.Any("error", err))
 		}
 		return true
 	})

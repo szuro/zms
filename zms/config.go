@@ -1,6 +1,7 @@
 package zms
 
 import (
+	"log/slog"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -13,6 +14,27 @@ type ZMSConf struct {
 	TagFilter    filter.Filter `yaml:"tag_filters"`
 	BufferSize   int           `yaml:"buffer_size"`
 	Http         HTTPConf      `yaml:"http"`
+	LogLevel     string        `yaml:"log_level"`
+	slogLevel    slog.Level    `yaml:"omitempty"`
+}
+
+func (zc *ZMSConf) setLogLevel() {
+	switch zc.LogLevel {
+	case "DEBUG":
+		zc.slogLevel = slog.LevelDebug
+	case "INFO":
+		zc.slogLevel = slog.LevelInfo
+	case "WARN":
+		zc.slogLevel = slog.LevelWarn
+	case "ERROR":
+		zc.slogLevel = slog.LevelError
+	default:
+		zc.slogLevel = slog.LevelInfo
+	}
+}
+
+func (zc *ZMSConf) GetLogLevel() slog.Level {
+	return zc.slogLevel
 }
 
 type HTTPConf struct {
@@ -28,6 +50,11 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 
 	conf = ZMSConf{}
 	err = yaml.Unmarshal(file, &conf)
+	if err != nil {
+		panic("Cannot parse ZMS config!")
+	}
+
+	conf.setLogLevel()
 	if conf.ServerConfig == "" {
 		conf.ServerConfig = "/etc/zabbix/zabbix_server.conf"
 	}

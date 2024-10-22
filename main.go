@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,9 +25,9 @@ var (
 )
 
 func printVersionInfo() {
-	fmt.Println(fmt.Sprintf("ZMS %s", Version))
-	fmt.Println(fmt.Sprintf("Git commit: %s", Commit))
-	fmt.Println(fmt.Sprintf("Compilation time: %s", BuildDate))
+	fmt.Printf("ZMS %s\n", Version)
+	fmt.Printf("Git commit: %s\n", Commit)
+	fmt.Printf("Compilation time: %s\n", BuildDate)
 }
 
 func main() {
@@ -41,6 +42,8 @@ func main() {
 	}
 
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
+	slog.SetLogLoggerLevel(zmsConfig.GetLogLevel())
+
 	zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
 
 	if zbxConfig.ExportDir == "" {
@@ -57,7 +60,7 @@ func main() {
 				if err == nil {
 					subject.Register(t)
 				} else {
-					log.Fatalf("Failed ro register: %s", t.GetName())
+					slog.Warn("Failed to register target", slog.Any("name", t.GetName()))
 				}
 
 			}
@@ -70,12 +73,12 @@ func main() {
 	go http.ListenAndServe(listen, nil)
 
 	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
-		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
-		time.Sleep(delay * time.Second)
+		slog.Info("Node is not active, sleeping for ", slog.Any("delay", delay))
+		time.Sleep(delay)
 		delay, isActive = zbx.GetHaStatus(zbxConfig)
 	}
 
-	log.Println("Node is active, listing files")
+	slog.Info("Node is active, listing files")
 
 	for _, subject := range subjects {
 		subject.SetFilter(zmsConfig.TagFilter)

@@ -1,7 +1,7 @@
 package subject
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -129,7 +129,7 @@ func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter
 			ts.Funnel = zbx.FileReaderGenerator[zbx.Event](zabbix)
 			obs[zbx.EVENT] = &ts
 		default:
-			fmt.Printf("Not supported export: %s", v)
+			slog.Error("Export not supported", slog.Any("export", v))
 		}
 	}
 

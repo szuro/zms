@@ -3,7 +3,7 @@
 package zbx
 
 import (
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -17,6 +17,6 @@ func ExtractNameAndStatus(input string) (string, string) {
 }
 
 func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
-	log.Println("Debug server is always active")
+	slog.Debug("Debug server is always active")
 	return GetFailoverDelay(""), true
 }

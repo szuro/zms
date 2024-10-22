@@ -3,7 +3,7 @@ package observer
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -27,10 +27,10 @@ func NewPSQL(name, connStr string, opts map[string]string) (p *PSQL, err error) 
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Println(fmt.Errorf("failed to connect: %v", err))
+		slog.Error("Failed to open connection", slog.Any("name", name), slog.Any("error", err))
 	}
 	if err := db.Ping(); err != nil {
-		log.Println(fmt.Errorf("failed to connect: %v", err))
+		slog.Error("Failed to ping database", slog.Any("name", name), slog.Any("error", err))
 		db.Close()
 		return nil, err
 	}
@@ -108,13 +108,13 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 
 	txn, err := p.dbConn.Begin()
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to begin transaction: %v", err))
+		slog.Error("Failed to begin transaction", slog.Any("name", p.name), slog.Any("error", err))
 		return false
 	}
 	stmt, err := txn.Prepare(base)
 	if err != nil {
 		txn.Rollback()
-		fmt.Println(fmt.Errorf("failed to prepare statement: %v", err))
+		slog.Error("Failed to prepare statement", slog.Any("name", p.name), slog.Any("error", err))
 	}
 	defer stmt.Close()
 
@@ -124,6 +124,7 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 		_, err := stmt.Exec(tag, H.Value, true, stamp, stamp)
 		if err != nil {
 			txn.Rollback()
+			slog.Error("Failed to execute statement", slog.Any("name", p.name), slog.Any("error", err))
 			p.monitor.historyValuesFailed.Inc()
 		}
 
@@ -132,7 +133,7 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 
 	err = txn.Commit()
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to commit transaction: %v", err))
+		slog.Error("Failed to commit transaction", slog.Any("name", p.name), slog.Any("error", err))
 	}
 
 	p.updateStats()
