@@ -52,29 +52,44 @@ type obserwerMetrics struct {
 	historyValuesFailed prometheus.Counter
 	trendsValuesSent    prometheus.Counter
 	trendsValuesFailed  prometheus.Counter
+	eventsValuesSent    prometheus.Counter
+	eventsValuesFailed  prometheus.Counter
 }
 
 func (m *obserwerMetrics) initObserverMetrics(observerType, name string) {
 	m.historyValuesSent = promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "zms_shipping_operations_total",
-		Help:        "Total number of history shipping operations",
+		Help:        "Total number of shipping operations",
 		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "history"},
 	})
 
 	m.historyValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "zms_shipping_errors_total",
-		Help:        "Total number of history shipping errors",
+		Help:        "Total number of shipping errors",
 		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "history"},
 	})
+
 	m.trendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "zms_shipping_operations_total",
-		Help:        "Total number of trends shipping operations",
+		Help:        "Total number of shipping operations",
 		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "trends"},
 	})
 
 	m.trendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "zms_shipping_errors_total",
-		Help:        "Total number of trends shipping errors",
+		Help:        "Total number of shipping errors",
 		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "trends"},
+	})
+
+	m.eventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+		Name:        "zms_shipping_operations_total",
+		Help:        "Total number of shipping operations",
+		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "events"},
+	})
+
+	m.eventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+		Name:        "zms_shipping_errors_total",
+		Help:        "Total number of shipping errors",
+		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "events"},
 	})
 }
