@@ -18,6 +18,13 @@
 # - name: <unique_name>
 #   type: pushgateway|azuretable|print
 #   connection: <connectionstring>
+#   tag_filters:
+#     accepted:
+#     - tag: <name>
+#       value: <value>
+#     rejected:
+#     - tag: <name>
+#       value: <value>
 #   source:
 #   - history
 #   - trends

@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"log"
+	"log/slog"
 	url_parser "net/url"
 	"os"
 	"sync"
@@ -20,23 +20,27 @@ type PushGatewayManager struct {
 	gateways sync.Map
 }
 
-func NewPushGatewayManager(name, url string) *PushGatewayManager {
-	_, err := url_parser.Parse(url)
+func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error) {
+	_, err = url_parser.Parse(url)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to parse URL", slog.Any("name", name), slog.Any("error", err))
+		return nil, err
 	}
 
-	pgm := PushGatewayManager{
+	pgm = &PushGatewayManager{
 		url: url,
 	}
 	pgm.SetName(name)
 	pgm.monitor.initObserverMetrics("pushgateway", name)
 
-	return &pgm
+	return
 }
 
 func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 	for _, element := range h {
+		if !pgm.localFilter.EvaluateFilter(element.Tags) {
+			continue
+		}
 		hostName := element.Host.Host
 		pushGateway, exists := pgm.gateways.Load(hostName)
 		if !exists {
@@ -51,16 +55,12 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 		pgm.monitor.historyValuesSent.Inc()
 		if err != nil {
 			pgm.monitor.historyValuesFailed.Inc()
-			log.Println(err)
+			slog.Error("Failed to ship values", slog.Any("name", pgm.name), slog.Any("error", err))
 		}
 		return true
 	})
 
 	return true
-}
-
-func (pgm *PushGatewayManager) SaveTrends(t []zbx.Trend) bool {
-	panic("not implemented")
 }
 
 func (hc HistoryCollector) Describe(ch chan<- *prometheus.Desc) {

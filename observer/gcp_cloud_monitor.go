@@ -32,7 +32,7 @@ type CloudMonitor struct {
 	projectID string
 }
 
-func NewCloudMonitor(name, file string) (cm *CloudMonitor) {
+func NewCloudMonitor(name, file string) (cm *CloudMonitor, err error) {
 	if file != "" {
 		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", file)
 	}
@@ -42,15 +42,18 @@ func NewCloudMonitor(name, file string) (cm *CloudMonitor) {
 
 	cm.ctx = context.Background()
 	creds, err := google.FindDefaultCredentials(cm.ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	cm.projectID = "projects/" + creds.ProjectID
 	cm.client, err = monitoring.NewMetricClient(cm.ctx, option.WithCredentialsJSON(creds.JSON))
-	cm.resource = newResource()
 
 	if err != nil {
-		// TODO: Handle error.
+		return nil, err
 	}
 
+	cm.resource = newResource()
 	createHistoryMetric(cm.projectID)
 	cm.monitor.initObserverMetrics("gcp_cloud_monitor", name)
 
@@ -88,6 +91,9 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 	metrics := make(map[int]*monitoringpb.TimeSeries, 0)
 
 	for _, hist := range h {
+		if !cm.localFilter.EvaluateFilter(hist.Tags) {
+			continue
+		}
 		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
 			continue
 		}
@@ -107,10 +113,6 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 	}
 
 	return true
-}
-
-func (cm *CloudMonitor) SaveTrends(t []zbx.Trend) bool {
-	panic("not implemented") // TODO: Implement
 }
 
 func (cm *CloudMonitor) Cleanup() {

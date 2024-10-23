@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,12 +20,30 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var (
+	Version, Commit, BuildDate string
+)
+
+func printVersionInfo() {
+	fmt.Printf("ZMS %s\n", Version)
+	fmt.Printf("Git commit: %s\n", Commit)
+	fmt.Printf("Compilation time: %s\n", BuildDate)
+}
+
 func main() {
 
 	zmsPath := flag.String("c", "/etc/zmsd.yaml", "Path of config file")
+	version := flag.Bool("v", false, "Show version info")
 	flag.Parse()
 
+	if *version {
+		printVersionInfo()
+		os.Exit(0)
+	}
+
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
+	slog.SetLogLoggerLevel(zmsConfig.GetLogLevel())
+
 	zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
 
 	if zbxConfig.ExportDir == "" {
@@ -32,33 +51,39 @@ func main() {
 		return
 	}
 
-	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
-		log.Printf("Node is not active, sleeping for %d seconds\n", delay)
-		time.Sleep(delay * time.Second)
-		delay, isActive = zbx.GetHaStatus(zbxConfig)
-	}
-
-	log.Println("Node is active, listing files")
-
 	subjects := subject.MkSubjects(zbxConfig, zmsConfig.BufferSize)
 
 	for _, target := range zmsConfig.Targets {
 		for name, subject := range subjects {
 			if slices.Contains(target.Source, name) {
-				subject.Register(target.ToObserver())
+				t, err := target.ToObserver()
+				if err == nil {
+					subject.Register(t)
+				} else {
+					slog.Warn("Failed to register target", slog.Any("name", t.GetName()))
+				}
+
 			}
 		}
-	}
-
-	for _, subject := range subjects {
-		subject.SetFilter(zmsConfig.TagFilter)
-		go subject.AcceptValues()
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
 
 	listen := fmt.Sprintf("%s:%d", zmsConfig.Http.ListenAddress, zmsConfig.Http.ListenPort)
-	http.ListenAndServe(listen, nil)
+	go http.ListenAndServe(listen, nil)
+
+	for delay, isActive := zbx.GetHaStatus(zbxConfig); !isActive; {
+		slog.Info("Node is not active, sleeping for ", slog.Any("delay", delay))
+		time.Sleep(delay)
+		delay, isActive = zbx.GetHaStatus(zbxConfig)
+	}
+
+	slog.Info("Node is active, listing files")
+
+	for _, subject := range subjects {
+		subject.SetFilter(zmsConfig.TagFilter)
+		go subject.AcceptValues()
+	}
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

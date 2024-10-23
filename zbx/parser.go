@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"path/filepath"
 	"strconv"
+
+	"log/slog"
 
 	"github.com/nxadm/tail"
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,6 +31,11 @@ func parseTrendLine(line *tail.Line) (t Trend, err error) {
 	return
 }
 
+func parseEventLine(line *tail.Line) (e Event, err error) {
+	err = json.Unmarshal([]byte(line.Text), &e)
+	return
+}
+
 func parseLine[T Export](line *tail.Line) (any, error) {
 	var t T
 	switch any(t).(type) {
@@ -37,6 +43,8 @@ func parseLine[T Export](line *tail.Line) (any, error) {
 		return parseHistoryLine(line)
 	case Trend:
 		return parseTrendLine(line)
+	case Event:
+		return parseEventLine(line)
 	}
 	return nil, errors.New("not a supported export type")
 }
@@ -48,6 +56,8 @@ func getBasePath[T Export]() (p string) {
 		p = HISTORY_EXPORT
 	case Trend:
 		p = TRENDS_EXPORT
+	case Event:
+		p = PROBLEMS_EXPORT
 	}
 
 	return
@@ -60,7 +70,7 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
 		file_type := t.GetExportName()
 		go func(filename string, file_index int, file_type string) {
-			log.Printf("Opening %s...\n", filename)
+			slog.Info("Opening export file", slog.Any("file", filename))
 
 			labels := prometheus.Labels{
 				"file_index":  strconv.Itoa(file_index),
@@ -86,17 +96,18 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 				})
 
 			if err != nil {
-				log.Printf("Fail! Could not open %s. Error: %s\n", filename, err)
+				slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
 				return
 			}
 
-			log.Printf("Success! %s opened. Parsing...\n", filename)
+			slog.Error("Parsing file", slog.Any("file", filename))
 			for line := range t.Lines {
 				parsed, err := parseLine[T](line)
 				parsedCounter.Inc()
 				if err != nil {
 					parsedErrorCounter.Inc()
-					log.Printf("Parsing failed line #%d in %s. Contents: '%s'\n", line.Num, filename, line.Text)
+
+					slog.Error("Failed to parse line", slog.Any("file", filename), slog.Any("line_number", line.Num), slog.Any("error", err))
 					continue
 				}
 				c <- parsed

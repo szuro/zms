@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0
 	github.com/googleapis/gax-go/v2 v2.12.0
+	github.com/lib/pq v1.10.9
 	github.com/nxadm/tail v1.4.11
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
 	golang.org/x/oauth2 v0.16.0

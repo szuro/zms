@@ -1,13 +1,13 @@
 package subject
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/observer"
 	"szuro.net/zms/zbx"
-	"szuro.net/zms/zms"
+	"szuro.net/zms/zms/filter"
 )
 
 type Subjecter interface {
@@ -15,7 +15,7 @@ type Subjecter interface {
 	Register(observer observer.Observer)
 	Deregister(observer observer.Observer)
 	NotifyAll()
-	SetFilter(filter zms.Filter)
+	SetFilter(filter filter.Filter)
 	Cleanup()
 	SetBuffer(size int)
 }
@@ -27,7 +27,7 @@ type Subject[T zbx.Export] struct {
 	values           []T
 	buffer           int
 	Funnel           chan any
-	globalFilter     zms.Filter
+	globalFilter     filter.Filter
 	bufferSizeGauge  prometheus.Gauge
 	bufferUsageGauge prometheus.Gauge
 }
@@ -74,6 +74,12 @@ func (bs *Subject[T]) NotifyAll() {
 		case zbx.History:
 			h := any(bs.values).([]zbx.History)
 			go v.SaveHistory(h)
+		case zbx.Trend:
+			t := any(bs.values).([]zbx.Trend)
+			go v.SaveTrends(t)
+		case zbx.Event:
+			e := any(bs.values).([]zbx.Event)
+			go v.SaveEvents(e)
 		}
 	}
 }
@@ -96,7 +102,7 @@ func (bs *Subject[T]) AcceptValues() {
 	}
 }
 
-func (bs *Subject[T]) SetFilter(filter zms.Filter) {
+func (bs *Subject[T]) SetFilter(filter filter.Filter) {
 	bs.globalFilter = filter
 }
 
@@ -118,8 +124,12 @@ func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter
 			ts := NewSubject[zbx.Trend]()
 			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
 			obs[zbx.TREND] = &ts
+		case zbx.EVENT:
+			ts := NewSubject[zbx.Event]()
+			ts.Funnel = zbx.FileReaderGenerator[zbx.Event](zabbix)
+			obs[zbx.EVENT] = &ts
 		default:
-			fmt.Printf("Not supported export: %s", v)
+			slog.Error("Export not supported", slog.Any("export", v))
 		}
 	}
 

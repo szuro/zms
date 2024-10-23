@@ -3,11 +3,12 @@ package zbx
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"log/slog"
 	//	"path/filepath"
 )
 
@@ -26,6 +27,7 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 	// zabbix_server.conf defaults
 	conf.DBSyncers = 4
 	conf.ExportTypes = []string{HISTORY, TREND, EVENT}
+	slog.Info("Reading config", slog.Any("path", conf.configPath))
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -52,9 +54,13 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 		}
 	}
 
-	log.Println("Detected configuraion:")
-	log.Printf("  ExportDir=%s\n", conf.ExportDir)
-	log.Printf("  Syncers=%d\n", conf.DBSyncers)
+	slog.Info(
+		"Detected config",
+		slog.Any("NodeName", conf.NodeName),
+		slog.Any("ExportDir", conf.ExportDir),
+		slog.Any("Syncers", conf.DBSyncers),
+		slog.Any(strings.Join(conf.ExportTypes, ","), conf.ExportTypes),
+	)
 	syncerGauge.Set(float64(conf.DBSyncers))
 
 	return
