@@ -6,4 +6,4 @@ $time=(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffK")
 $env:GOOS="linux"
 $env:GOARCH="amd64"
 
-go build -trimpath -ldflags="-X main.Version=$version -X main.Commit=$commit -X manin.BuildDate=$time" -o zmsd .
+go build -trimpath -ldflags="-X main.Version=$version -X main.Commit=$commit -X main.BuildDate=$time" -o zmsd .
