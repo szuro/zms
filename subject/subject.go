@@ -1,8 +1,6 @@
 package subject
 
 import (
-	"log/slog"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/observer"
@@ -112,29 +110,29 @@ func (bs *Subject[T]) Cleanup() {
 	}
 }
 
-func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter) {
-	obs = make(map[string]Subjecter)
-	for _, v := range zabbix.ExportTypes {
-		switch v {
-		case zbx.HISTORY:
-			hs := NewSubject[zbx.History]()
-			hs.Funnel = zbx.FileReaderGenerator[zbx.History](zabbix)
-			obs[zbx.HISTORY] = &hs
-		case zbx.TREND:
-			ts := NewSubject[zbx.Trend]()
-			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
-			obs[zbx.TREND] = &ts
-		case zbx.EVENT:
-			ts := NewSubject[zbx.Event]()
-			ts.Funnel = zbx.FileReaderGenerator[zbx.Event](zabbix)
-			obs[zbx.EVENT] = &ts
-		default:
-			slog.Error("Export not supported", slog.Any("export", v))
-		}
-	}
+// func MkSubjects(zabbix zbx.ZabbixConf, bufferSize int) (obs map[string]Subjecter) {
+// 	obs = make(map[string]Subjecter)
+// 	for _, v := range zabbix.ExportTypes {
+// 		switch v {
+// 		case zbx.HISTORY:
+// 			hs := NewSubject[zbx.History]()
+// 			hs.Funnel = zbx.FileReaderGenerator[zbx.History](zabbix)
+// 			obs[zbx.HISTORY] = &hs
+// 		case zbx.TREND:
+// 			ts := NewSubject[zbx.Trend]()
+// 			ts.Funnel = zbx.FileReaderGenerator[zbx.Trend](zabbix)
+// 			obs[zbx.TREND] = &ts
+// 		case zbx.EVENT:
+// 			ts := NewSubject[zbx.Event]()
+// 			ts.Funnel = zbx.FileReaderGenerator[zbx.Event](zabbix)
+// 			obs[zbx.EVENT] = &ts
+// 		default:
+// 			slog.Error("Export not supported", slog.Any("export", v))
+// 		}
+// 	}
 
-	for _, subject := range obs {
-		subject.SetBuffer(bufferSize)
-	}
-	return
-}
+// 	for _, subject := range obs {
+// 		subject.SetBuffer(bufferSize)
+// 	}
+// 	return
+// }

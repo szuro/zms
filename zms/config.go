@@ -8,8 +8,12 @@ import (
 	"szuro.net/zms/zms/filter"
 )
 
+const FILE_MODE = "file"
+const HTTP_MODE = "http"
+
 type ZMSConf struct {
 	ServerConfig string `yaml:"server_config"`
+	Mode         string
 	Targets      []Target
 	TagFilter    filter.Filter `yaml:"tag_filters"`
 	BufferSize   int           `yaml:"buffer_size"`
@@ -54,19 +58,37 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 		panic("Cannot parse ZMS config!")
 	}
 
+	conf.Mode = setMode(conf.Mode)
+	conf.BufferSize = setBuffer(conf.BufferSize)
+	conf.Http.ListenPort = setPort(conf.Http.ListenPort)
+
 	conf.setLogLevel()
 	if conf.ServerConfig == "" {
 		conf.ServerConfig = "/etc/zabbix/zabbix_server.conf"
 	}
-	if conf.BufferSize == 0 {
-		conf.BufferSize = 100
-	}
 
 	conf.TagFilter.Activate()
 
-	if conf.Http.ListenPort == 0 {
-		conf.Http.ListenPort = 2020
-	}
-
 	return
+}
+
+func setBuffer(buffer int) int {
+	if buffer == 0 {
+		buffer = 100
+	}
+	return buffer
+}
+
+func setMode(mode string) string {
+	if mode != FILE_MODE && mode != HTTP_MODE {
+		mode = FILE_MODE
+	}
+	return mode
+}
+
+func setPort(port int) int {
+	if port == 0 {
+		port = 2020
+	}
+	return port
 }

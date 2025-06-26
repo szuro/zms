@@ -13,3 +13,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Zabbix export files
+history*.ndjson
+trends*.ndjson
+problems*.ndjson

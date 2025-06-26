@@ -3,7 +3,6 @@
 package zbx
 
 import (
-	"log"
 	"log/slog"
 	"os/exec"
 	"regexp"
@@ -12,9 +11,12 @@ import (
 	"time"
 )
 
-const HEADER_LEN = 3
-const INITIAL_SYNC = "Cannot perform specified runtime control command during initial configuration cache sync"
-const NON_ACTIVE = "Runtime commands can be executed only in active mode"
+const (
+	HEADER_LEN    = 3
+	INITIAL_SYNC  = "Cannot perform specified runtime control command during initial configuration cache sync"
+	NON_ACTIVE    = "Runtime commands can be executed only in active mode"
+	DEFAULT_DELAY = 60
+)
 
 // Returns failover delay in seconds
 func GetFailoverDelay(input string) time.Duration {
@@ -49,7 +51,7 @@ func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
 	if err != nil {
 		slog.Error("Failed to get HA status", slog.Any("error", err))
 	} else if outString == INITIAL_SYNC {
-		log.Println("Waiting for initial sync to end...")
+		slog.Info("Waiting for initial sync to end...")
 		time.Sleep(30 * time.Second)
 	}
 
@@ -61,7 +63,7 @@ func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
 	}
 
 	if strings.TrimRight(lines[0], "\n") == NON_ACTIVE {
-		var d time.Duration = 60
+		var d time.Duration = DEFAULT_DELAY
 		slog.Info("Node in non-active mode, waiting", slog.Any("delay", d))
 		delay = time.Duration(d * time.Second)
 		return

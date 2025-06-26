@@ -63,15 +63,31 @@ func getBasePath[T Export]() (p string) {
 	return
 }
 
-func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
+func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any, tailedFiles []*tail.Tail) {
 	var t T
+	file_type := t.GetExportName()
+	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export
 	c = make(chan any, 100)
+
+	//ADD main export file
+
 	for i := 1; i <= zbx.DBSyncers; i++ {
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
-		file_type := t.GetExportName()
+		tailedFile, err := tail.TailFile(
+			filename, tail.Config{
+				Follow:        true,
+				ReOpen:        true,
+				CompleteLines: true,
+			})
+
+		tailedFiles[i] = tailedFile
+		if err != nil {
+			slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
+			return
+		}
+
 		go func(filename string, file_index int, file_type string) {
 			slog.Info("Opening export file", slog.Any("file", filename))
-
 			labels := prometheus.Labels{
 				"file_index":  strconv.Itoa(file_index),
 				"export_type": file_type,
@@ -88,20 +104,8 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 				ConstLabels: labels,
 			})
 
-			t, err := tail.TailFile(
-				filename, tail.Config{
-					Follow:        true,
-					ReOpen:        true,
-					CompleteLines: true,
-				})
-
-			if err != nil {
-				slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
-				return
-			}
-
 			slog.Error("Parsing file", slog.Any("file", filename))
-			for line := range t.Lines {
+			for line := range tailedFiles[file_index].Lines {
 				parsed, err := parseLine[T](line)
 				parsedCounter.Inc()
 				if err != nil {
@@ -112,7 +116,7 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any) {
 				}
 				c <- parsed
 			}
-			t.Wait()
+			tailedFiles[file_index].Wait()
 		}(filename, i, file_type)
 	}
 
