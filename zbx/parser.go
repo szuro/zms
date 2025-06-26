@@ -63,16 +63,36 @@ func getBasePath[T Export]() (p string) {
 	return
 }
 
+func getMainFilePath[T Export]() (p string) {
+	var t T
+	switch any(t).(type) {
+	case History:
+		p = HISTORY_MAIN
+	case Trend:
+		p = TRENDS_MAIN
+	case Event:
+		p = PROBLEMS_MAIN
+	}
+
+	return
+}
+
 func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any, tailedFiles []*tail.Tail) {
 	var t T
 	file_type := t.GetExportName()
 	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export
 	c = make(chan any, 100)
 
-	//ADD main export file
+	for i := 0; i <= zbx.DBSyncers; i++ {
+		var filenamePattern string
+		if i == 0 {
+			filenamePattern = getMainFilePath[T]()
+		} else {
+			filenamePattern = getBasePath[T]()
+		}
 
-	for i := 1; i <= zbx.DBSyncers; i++ {
-		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(getBasePath[T](), i))
+		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(filenamePattern, i))
+
 		tailedFile, err := tail.TailFile(
 			filename, tail.Config{
 				Follow:        true,
