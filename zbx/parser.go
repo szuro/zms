@@ -1,11 +1,16 @@
 package zbx
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strconv"
+
+	bolt "go.etcd.io/bbolt"
 
 	"log/slog"
 
@@ -77,12 +82,41 @@ func getMainFilePath[T Export]() (p string) {
 	return
 }
 
-func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any, tailedFiles []*tail.Tail) {
-	var t T
-	file_type := t.GetExportName()
-	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export
-	c = make(chan any, 100)
+func bytesToInt64(b []byte) int64 {
+	return int64(binary.BigEndian.Uint64(b))
+}
 
+func findLastReadOffset(indexDB *bolt.DB, filename string) (location *tail.SeekInfo, err error) {
+	location.Whence = io.SeekStart
+	err = indexDB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("offsets")) // Change "offsets" to your actual bucket name if different
+		if bucket == nil {
+			slog.Warn("Offsets bucket not found", slog.String("filename", filename))
+			return errors.New("offsets bucket not found")
+		}
+		val := bucket.Get([]byte(filename))
+		if val == nil {
+			location.Offset = 0
+			return nil
+		}
+		location.Offset = bytesToInt64(val)
+		return nil
+	})
+	if err != nil {
+		location.Offset = 0
+		return
+	}
+
+	f, err := os.Stat(filename)
+	// ofset greater than size means the file was rotated
+	if location.Offset > f.Size() {
+		location.Offset = 0
+	}
+
+	return
+}
+
+func generateFilePaths[T Export](zbx ZabbixConf) (paths []string) {
 	for i := 0; i <= zbx.DBSyncers; i++ {
 		var filenamePattern string
 		if i == 0 {
@@ -92,39 +126,58 @@ func FileReaderGenerator[T Export](zbx ZabbixConf) (c chan any, tailedFiles []*t
 		}
 
 		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(filenamePattern, i))
+		paths = append(paths, filename)
+	}
+	return
+}
+
+func makeCounters(file_type string, file_index int) (parsedCounter, parsedErrorCounter prometheus.Counter) {
+	labels := prometheus.Labels{
+		"file_index":  strconv.Itoa(file_index),
+		"export_type": file_type,
+	}
+
+	parsedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name:        "zms_lines_parsed_total",
+		Help:        "The total number of processed lines",
+		ConstLabels: labels,
+	})
+	parsedErrorCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name:        "zms_lines_invalid_total",
+		Help:        "The total number of lines with invalid data",
+		ConstLabels: labels,
+	})
+	return
+}
+
+func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *bolt.DB) (c chan any, tailedFiles []*tail.Tail) {
+	var t T
+	file_type := t.GetExportName()
+	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export
+	c = make(chan any, 100)
+
+	exportFiles := generateFilePaths[T](zbx)
+	for i, filename := range exportFiles {
+		loc, _ := findLastReadOffset(indexDB, filename)
 
 		tailedFile, err := tail.TailFile(
 			filename, tail.Config{
 				Follow:        true,
 				ReOpen:        true,
 				CompleteLines: true,
+				Location:      loc,
 			})
 
-		tailedFiles[i] = tailedFile
 		if err != nil {
 			slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
 			return
 		}
+		tailedFiles = append(tailedFiles, tailedFile)
 
 		go func(filename string, file_index int, file_type string) {
-			slog.Info("Opening export file", slog.Any("file", filename))
-			labels := prometheus.Labels{
-				"file_index":  strconv.Itoa(file_index),
-				"export_type": file_type,
-			}
+			parsedCounter, parsedErrorCounter := makeCounters(file_type, file_index)
+			slog.Info("Opening and parsing export file", slog.Any("file", filename))
 
-			parsedCounter := promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_lines_parsed_total",
-				Help:        "The total number of processed lines",
-				ConstLabels: labels,
-			})
-			parsedErrorCounter := promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_lines_invalid_total",
-				Help:        "The total number of lines with invalid data",
-				ConstLabels: labels,
-			})
-
-			slog.Error("Parsing file", slog.Any("file", filename))
 			for line := range tailedFiles[file_index].Lines {
 				parsed, err := parseLine[T](line)
 				parsedCounter.Inc()

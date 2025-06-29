@@ -1,12 +1,15 @@
 module szuro.net/zms
 
-go 1.20
+go 1.23
+
+toolchain go1.23.10
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0
 	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/lib/pq v1.10.9
 	github.com/nxadm/tail v1.4.11
+	go.etcd.io/bbolt v1.4.2
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
 	golang.org/x/oauth2 v0.16.0
 	google.golang.org/api v0.155.0
@@ -30,7 +33,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
 	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240108191215-35c7eff3a6b1 // indirect
@@ -51,7 +54,7 @@ require (
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240108191215-35c7eff3a6b1
 	google.golang.org/protobuf v1.32.0 // indirect

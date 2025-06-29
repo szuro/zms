@@ -12,14 +12,15 @@ const FILE_MODE = "file"
 const HTTP_MODE = "http"
 
 type ZMSConf struct {
-	ServerConfig string `yaml:"server_config"`
-	Mode         string
-	Targets      []Target
-	TagFilter    filter.Filter `yaml:"tag_filters"`
-	BufferSize   int           `yaml:"buffer_size"`
-	Http         HTTPConf      `yaml:"http"`
-	LogLevel     string        `yaml:"log_level"`
-	slogLevel    slog.Level    `yaml:"omitempty"`
+	ServerConfig  string `yaml:"server_config"`
+	PositionIndex string `yaml:"position_index"`
+	Mode          string
+	Targets       []Target
+	TagFilter     filter.Filter `yaml:"tag_filters"`
+	BufferSize    int           `yaml:"buffer_size"`
+	Http          HTTPConf      `yaml:"http"`
+	LogLevel      string        `yaml:"log_level"`
+	slogLevel     slog.Level    `yaml:"omitempty"`
 }
 
 func (zc *ZMSConf) setLogLevel() {
@@ -61,6 +62,7 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 	conf.Mode = setMode(conf.Mode)
 	conf.BufferSize = setBuffer(conf.BufferSize)
 	conf.Http.ListenPort = setPort(conf.Http.ListenPort)
+	conf.PositionIndex = setIndex(conf.PositionIndex)
 
 	conf.setLogLevel()
 	if conf.ServerConfig == "" {
@@ -91,4 +93,11 @@ func setPort(port int) int {
 		port = 2020
 	}
 	return port
+}
+
+func setIndex(path string) string {
+	if path == "" {
+		path = "/tmp/position.db"
+	}
+	return path
 }
