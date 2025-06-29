@@ -59,10 +59,10 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 		panic("Cannot parse ZMS config!")
 	}
 
-	conf.Mode = setMode(conf.Mode)
-	conf.BufferSize = setBuffer(conf.BufferSize)
-	conf.Http.ListenPort = setPort(conf.Http.ListenPort)
-	conf.PositionIndex = setIndex(conf.PositionIndex)
+	conf.setMode(conf.Mode)
+	conf.setBuffer(conf.BufferSize)
+	conf.setPort(conf.Http.ListenPort)
+	conf.setIndex(conf.PositionIndex)
 
 	conf.setLogLevel()
 	if conf.ServerConfig == "" {
@@ -74,30 +74,28 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 	return
 }
 
-func setBuffer(buffer int) int {
+func (zc *ZMSConf) setBuffer(buffer int) {
 	if buffer == 0 {
 		buffer = 100
 	}
-	return buffer
 }
 
-func setMode(mode string) string {
+func (zc *ZMSConf) setMode(mode string) {
 	if mode != FILE_MODE && mode != HTTP_MODE {
 		mode = FILE_MODE
 	}
-	return mode
 }
 
-func setPort(port int) int {
+func (zc *ZMSConf) setPort(port int) {
 	if port == 0 {
 		port = 2020
 	}
-	return port
+	zc.Http.ListenPort = port
 }
 
-func setIndex(path string) string {
+func (zc *ZMSConf) setIndex(path string) {
 	if path == "" {
 		path = "/tmp/position.db"
 	}
-	return path
+	zc.PositionIndex = path
 }
