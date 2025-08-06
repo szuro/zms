@@ -59,6 +59,7 @@ func (bs *baseInput) setTargets() {
 			if slices.Contains(target.Source, name) {
 				t, err := target.ToObserver()
 				if err == nil {
+					t.InitBuffer(bs.config.WorkingDir, target.OfflineBufferTime)
 					subject.Register(t)
 				} else {
 					slog.Warn("Failed to register target", slog.Any("name", t.GetName()))

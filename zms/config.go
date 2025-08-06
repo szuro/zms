@@ -18,6 +18,7 @@ type ZMSConf struct {
 	Targets       []Target
 	TagFilter     filter.Filter `yaml:"tag_filters"`
 	BufferSize    int           `yaml:"buffer_size"`
+	WorkingDir    string        `yaml:"working_dir"`
 	Http          HTTPConf      `yaml:"http"`
 	LogLevel      string        `yaml:"log_level"`
 	slogLevel     slog.Level    `yaml:"omitempty"`
@@ -63,6 +64,7 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 	conf.setBuffer(conf.BufferSize)
 	conf.setPort(conf.Http.ListenPort)
 	conf.setIndex(conf.PositionIndex)
+	conf.setOfflineBuffers()
 
 	conf.setLogLevel()
 	if conf.ServerConfig == "" {
@@ -81,8 +83,13 @@ func (zc *ZMSConf) setBuffer(buffer int) {
 }
 
 func (zc *ZMSConf) setMode(mode string) {
-	if mode != FILE_MODE && mode != HTTP_MODE {
-		mode = FILE_MODE
+	switch mode {
+	case FILE_MODE:
+		zc.Mode = FILE_MODE
+	case HTTP_MODE:
+		zc.Mode = HTTP_MODE
+	default:
+		zc.Mode = FILE_MODE
 	}
 }
 
@@ -95,7 +102,15 @@ func (zc *ZMSConf) setPort(port int) {
 
 func (zc *ZMSConf) setIndex(path string) {
 	if path == "" {
-		path = "/tmp/position.db"
+		path = zc.WorkingDir + "/position.db"
 	}
 	zc.PositionIndex = path
+}
+
+func (zc *ZMSConf) setOfflineBuffers() {
+	for _, target := range zc.Targets {
+		if target.OfflineBufferTime < 0 {
+			target.OfflineBufferTime = 0
+		}
+	}
 }
