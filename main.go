@@ -55,6 +55,9 @@ func main() {
 	case zms.HTTP_MODE:
 		panic("HTTP mode is not implemented yet")
 		// input, _ = subject.NewHTTPInput(zmsConfig)
+	default:
+		slog.Error("Unknown mode", slog.String("mode", zmsConfig.Mode))
+		os.Exit(1)
 	}
 
 	input.Prepare()

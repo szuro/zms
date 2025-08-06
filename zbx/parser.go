@@ -87,6 +87,7 @@ func bytesToInt64(b []byte) int64 {
 }
 
 func findLastReadOffset(indexDB *bolt.DB, filename string) (location *tail.SeekInfo, err error) {
+	location = &tail.SeekInfo{}
 	location.Whence = io.SeekStart
 	err = indexDB.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("offsets")) // Change "offsets" to your actual bucket name if different
@@ -117,15 +118,15 @@ func findLastReadOffset(indexDB *bolt.DB, filename string) (location *tail.SeekI
 }
 
 func generateFilePaths[T Export](zbx ZabbixConf) (paths []string) {
+	var filename string
 	for i := 0; i <= zbx.DBSyncers; i++ {
-		var filenamePattern string
 		if i == 0 {
-			filenamePattern = getMainFilePath[T]()
+			filename = getMainFilePath[T]()
 		} else {
-			filenamePattern = getBasePath[T]()
+			filenamePattern := getBasePath[T]()
+			filename = filepath.Join(zbx.ExportDir, fmt.Sprintf(filenamePattern, i))
 		}
 
-		filename := filepath.Join(zbx.ExportDir, fmt.Sprintf(filenamePattern, i))
 		paths = append(paths, filename)
 	}
 	return
@@ -172,7 +173,7 @@ func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *bolt.DB) (c chan any
 			slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
 			return
 		}
-		tailedFiles = append(tailedFiles, tailedFile)
+		tailedFiles[i] = tailedFile
 
 		go func(filename string, file_index int, file_type string) {
 			parsedCounter, parsedErrorCounter := makeCounters(file_type, file_index)

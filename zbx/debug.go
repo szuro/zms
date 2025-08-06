@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const DEFAULT_DELAY = 60
+
 func GetFailoverDelay(input string) time.Duration {
 	return time.Duration(60)
 
