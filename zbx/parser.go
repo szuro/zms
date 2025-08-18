@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	bolt "go.etcd.io/bbolt"
+	badger "github.com/dgraph-io/badger/v4"
 
 	"log/slog"
 
@@ -86,27 +86,23 @@ func bytesToInt64(b []byte) int64 {
 	return int64(binary.BigEndian.Uint64(b))
 }
 
-func findLastReadOffset(indexDB *bolt.DB, filename string) (location *tail.SeekInfo, err error) {
+func findLastReadOffset(indexDB *badger.DB, filename string) (location *tail.SeekInfo, err error) {
 	location = &tail.SeekInfo{}
 	location.Whence = io.SeekStart
-	err = indexDB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("offsets")) // Change "offsets" to your actual bucket name if different
-		if bucket == nil {
-			slog.Warn("Offsets bucket not found", slog.String("filename", filename))
-			return errors.New("offsets bucket not found")
-		}
-		val := bucket.Get([]byte(filename))
-		if val == nil {
-			location.Offset = 0
+
+	err = indexDB.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(filename))
+		err = item.Value(func(val []byte) error {
+			offset := bytesToInt64(val)
+			location.Offset = offset
 			return nil
+		})
+		if err != nil {
+			location.Offset = 0
 		}
-		location.Offset = bytesToInt64(val)
-		return nil
+
+		return err
 	})
-	if err != nil {
-		location.Offset = 0
-		return
-	}
 
 	f, err := os.Stat(filename)
 	// ofset greater than size means the file was rotated
@@ -151,7 +147,7 @@ func makeCounters(file_type string, file_index int) (parsedCounter, parsedErrorC
 	return
 }
 
-func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *bolt.DB) (c chan any, tailedFiles []*tail.Tail) {
+func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *badger.DB) (c chan any, tailedFiles []*tail.Tail) {
 	var t T
 	file_type := t.GetExportName()
 	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export

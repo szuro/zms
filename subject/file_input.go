@@ -3,9 +3,10 @@ package subject
 import (
 	"encoding/binary"
 	"log/slog"
+	"os"
 
+	badger "github.com/dgraph-io/badger/v4"
 	"github.com/nxadm/tail"
-	bolt "go.etcd.io/bbolt"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
 )
@@ -13,7 +14,7 @@ import (
 type FileInput struct {
 	baseInput
 	activeTails []*tail.Tail
-	indexFinger *bolt.DB
+	fileIndex   *badger.DB // BadgerDB instance for offline buffering
 	zbxConf     zbx.ZabbixConf
 }
 
@@ -22,8 +23,13 @@ func NewFileInput(zbxConf zbx.ZabbixConf, zmsConf zms.ZMSConf) (fi *FileInput, e
 	fi.config = zmsConf
 	fi.zbxConf = zbxConf
 	fi.subjects = make(map[string]Subjecter)
-
-	fi.indexFinger, err = bolt.Open(zmsConf.PositionIndex, 0600, nil)
+	db, err := badger.Open(badger.DefaultOptions(
+		zmsConf.WorkingDir + string(os.PathSeparator) + "index.db",
+	))
+	if err != nil {
+		slog.Error("Failed to open BadgerDB for offline buffering", "error", err)
+	}
+	fi.fileIndex = db
 
 	return
 }
@@ -51,20 +57,13 @@ func (fi *FileInput) Stop() {
 			continue
 		}
 
-		fi.indexFinger.Update(func(tx *bolt.Tx) error {
-			bucket, err := tx.CreateBucketIfNotExists([]byte("offsets"))
-			if err != nil {
-				return err
-			}
-			err = bucket.Put([]byte(f.Filename), int64ToBytes(offset))
-			if err != nil {
-				return err
-			}
-			return nil
-
+		err = fi.fileIndex.Update(func(txn *badger.Txn) error {
+			err := txn.Set([]byte(f.Filename), int64ToBytes(offset))
+			return err
 		})
+
 	}
-	fi.indexFinger.Close()
+	fi.fileIndex.Close()
 	fi.baseInput.Stop()
 }
 
@@ -75,15 +74,15 @@ func (fi *FileInput) mkSubjects() {
 		switch v {
 		case zbx.HISTORY:
 			hs := NewSubject[zbx.History]()
-			hs.Funnel, files = zbx.FileReaderGenerator[zbx.History](zabbix, fi.indexFinger)
+			hs.Funnel, files = zbx.FileReaderGenerator[zbx.History](zabbix, fi.fileIndex)
 			fi.subjects[zbx.HISTORY] = &hs
 		case zbx.TREND:
 			ts := NewSubject[zbx.Trend]()
-			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Trend](zabbix, fi.indexFinger)
+			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Trend](zabbix, fi.fileIndex)
 			fi.subjects[zbx.TREND] = &ts
 		case zbx.EVENT:
 			ts := NewSubject[zbx.Event]()
-			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Event](zabbix, fi.indexFinger)
+			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Event](zabbix, fi.fileIndex)
 			fi.subjects[zbx.EVENT] = &ts
 		default:
 			slog.Error("Export not supported", slog.Any("export", v))

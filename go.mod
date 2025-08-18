@@ -9,7 +9,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/lib/pq v1.10.9
 	github.com/nxadm/tail v1.4.11
-	go.etcd.io/bbolt v1.4.2
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
 	golang.org/x/oauth2 v0.16.0
 	google.golang.org/api v0.155.0
@@ -21,7 +20,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/go-delve/delve v1.25.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
