@@ -41,9 +41,6 @@ func (p *Print) SaveHistory(h []zbx.History) bool {
 		p.historyFunction,
 		p.buffer,
 		p.offlineBufferTTL,
-		func(h zbx.History) []byte {
-			return []byte("history_" + fmt.Sprint(h.ItemID) + ":" + fmt.Sprint(h.Clock) + ":" + fmt.Sprint(h.Ns))
-		},
 		func(val []byte) (zbx.History, error) {
 			var h zbx.History
 			dec := gob.NewDecoder(bytes.NewReader(val))
@@ -74,9 +71,6 @@ func (p *Print) SaveTrends(t []zbx.Trend) bool {
 		p.trendFunction,
 		p.buffer,
 		p.offlineBufferTTL,
-		func(t zbx.Trend) []byte {
-			return []byte("trends_" + fmt.Sprint(t.ItemID) + ":" + fmt.Sprint(t.Clock))
-		},
 		func(val []byte) (zbx.Trend, error) {
 			var t zbx.Trend
 			dec := gob.NewDecoder(bytes.NewReader(val))

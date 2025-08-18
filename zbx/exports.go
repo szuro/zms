@@ -1,6 +1,9 @@
 package zbx
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	HISTORY_EXPORT  string = "history-history-syncer-%d.ndjson"
@@ -40,6 +43,7 @@ type Export interface {
 	History | Trend | Event
 	ShowTags() []Tag
 	GetExportName() string
+	Hash() []byte
 }
 
 type History struct {
@@ -68,6 +72,14 @@ func (h History) GetExportName() string {
 	return HISTORY
 }
 
+func (h History) Hash() []byte {
+	return []byte("history_" + fmt.Sprint(h.ItemID) + ":" + fmt.Sprint(h.Clock) + ":" + fmt.Sprint(h.Ns))
+}
+
+func (h History) IsNumeric() bool {
+	return h.Type == FLOAT || h.Type == UNSIGNED
+}
+
 type Trend struct {
 	Host          *Host    `json:"host,omitempty"` // Host name and visible name of the item host
 	ItemID        int      `json:"itemid"`         // Item ID
@@ -86,6 +98,10 @@ func (t Trend) ShowTags() []Tag {
 
 func (t Trend) GetExportName() string {
 	return TREND
+}
+
+func (t Trend) Hash() []byte {
+	return []byte("trend_" + fmt.Sprint(t.ItemID) + ":" + fmt.Sprint(t.Clock))
 }
 
 type Event struct {
@@ -107,4 +123,8 @@ func (e Event) ShowTags() []Tag {
 
 func (e Event) GetExportName() string {
 	return EVENT
+}
+
+func (e Event) Hash() []byte {
+	return []byte("event_" + fmt.Sprint(e.EventID))
 }

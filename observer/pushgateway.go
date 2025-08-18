@@ -1,8 +1,6 @@
 package observer
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 	url_parser "net/url"
@@ -37,21 +35,27 @@ func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error
 }
 
 func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
+	acceptedValues := make([]zbx.History, 0, len(h))
 	for _, element := range h {
 		if !pgm.localFilter.EvaluateFilter(element.Tags) {
 			continue
 		}
+		acceptedValues = append(acceptedValues, element)
+	}
+
+	for _, element := range acceptedValues {
 		hostName := element.Host.Host
-		pushGateway, exists := pgm.gateways.Load(hostName)
+		pg, exists := pgm.gateways.Load(hostName)
 		if !exists {
-			pushGateway = NewPushGateway(hostName, pgm.url)
-			pgm.gateways.Store(hostName, pushGateway)
+			pg = newPushGateway(hostName, pgm.url)
+			pgm.gateways.Store(hostName, pg)
 		}
-		pushGateway.(PushGateway).hc.history = append(pushGateway.(PushGateway).hc.history, element)
+		pg.(pushGateway).hc.history = append(pg.(pushGateway).hc.history, element)
 	}
 
 	pgm.gateways.Range(func(key, value interface{}) bool {
-		err := value.(PushGateway).pusher.Add()
+		pusher := value.(pushGateway).pusher
+		err := pusher.Add()
 		pgm.monitor.historyValuesSent.Inc()
 		if err != nil {
 			pgm.monitor.historyValuesFailed.Inc()
@@ -63,11 +67,11 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 	return true
 }
 
-func (hc HistoryCollector) Describe(ch chan<- *prometheus.Desc) {
+func (hc historyCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(hc, ch)
 }
 
-func (hc HistoryCollector) Collect(ch chan<- prometheus.Metric) {
+func (hc historyCollector) Collect(ch chan<- prometheus.Metric) {
 	metrics := make(map[int]prometheus.Metric, 0)
 
 	for _, hist := range hc.history {
@@ -76,14 +80,10 @@ func (hc HistoryCollector) Collect(ch chan<- prometheus.Metric) {
 			continue
 		}
 
-		hash := md5.Sum([]byte(hist.Name))
-		metric_name := "zabbix_" + hex.EncodeToString(hash[:])
-		value := hist.Value.(float64)
-
 		metric := prometheus.MustNewConstMetric(
-			prometheus.NewDesc(metric_name, hist.Name, []string{"item", "itemid"}, prometheus.Labels{"history": "history"}),
+			prometheus.NewDesc("zabbix_push_history", hist.Name, []string{"item", "itemid"}, prometheus.Labels{"history": "history"}),
 			prometheus.GaugeValue,
-			value,
+			hist.Value.(float64),
 			hist.Name, fmt.Sprintf("%d", hist.ItemID),
 		)
 
@@ -96,27 +96,26 @@ func (hc HistoryCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-type PushGateway struct {
-	baseObserver
+type pushGateway struct {
 	pusher *push.Pusher
-	hc     *HistoryCollector
+	hc     *historyCollector
 	// TODO: add trend collector
 }
 
-type HistoryCollector struct {
+type historyCollector struct {
 	history []zbx.History
 }
 
-func NewPushGateway(hostName, url string) PushGateway {
+func newPushGateway(hostName, url string) pushGateway {
 	job, _ := os.Hostname()
 	_, err := url_parser.Parse(url)
 	if err != nil {
 		panic(err)
 	}
 
-	pg := PushGateway{}
+	pg := pushGateway{}
 
-	pg.hc = &HistoryCollector{
+	pg.hc = &historyCollector{
 		history: []zbx.History{},
 	}
 

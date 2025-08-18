@@ -100,12 +100,13 @@ Note that it is possible to send different sources to different targets.
 
 Here's an overwiev of what's supported for each target along with the meaning of `connection`.
 
-| Target            | History | Trends | Events | Connection                                                                                       |
-| ----------------- | ------- | ------ | ------ | ------------------------------------------------------------------------------------------------ |
-| azuretable        | yes     | no     | no     | Storage account SAS URL.                                                                         |
-| gcp_cloud_monitor | yes     | no     | no     | Absolute path to file with access credentials. If empty, GOOGLE_APPLICATION_CREDENTIALS is used. |
-| print             | yes     | yes    | no     | stdout/stderr.                                                                                   |
-| pushgateway       | yes     | no     | no     | URL of Pushgateway. May contain user and password.                                               |
+| Target            | History | Trends | Events | Offline buffer | Connection                                                                                       |
+| ----------------- | ------- | ------ | ------ | -------------- | ------------------------------------------------------------------------------------------------ |
+| azuretable        | yes     | no     | no     | yes            | Storage account SAS URL.                                                                         |
+| gcp_cloud_monitor | yes     | no     | no     | no             | Absolute path to file with access credentials. If empty, GOOGLE_APPLICATION_CREDENTIALS is used. |
+| print             | yes     | yes    | no     | yes            | stdout/stderr.                                                                                   |
+| pushgateway       | yes     | no     | no     | no             | URL of Pushgateway. May contain user and password.                                               |
+| psql              | yes     | no     | no     | yes            | PSQL connection string                                                                           |
 
 # Running
 

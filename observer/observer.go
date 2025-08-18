@@ -66,13 +66,12 @@ func (p *baseObserver) Cleanup() {
 }
 
 // genericSave is a DRY helper for SaveHistory, SaveTrends, SaveEvents
-func genericSave[T any](
+func genericSave[T zbx.Export](
 	items []T,
 	filterFunc func(T) bool,
 	saveFunc func([]T) ([]T, error),
 	buffer *badger.DB,
 	offlineBufferTTL time.Duration,
-	keyFunc func(T) []byte,
 	decodeFunc func([]byte) (T, error),
 ) bool {
 	toSave := make([]T, 0, len(items))
@@ -89,7 +88,7 @@ func genericSave[T any](
 			enc := gob.NewEncoder(&value)
 			txn := buffer.NewTransaction(true)
 			for _, item := range toBuffer {
-				key := keyFunc(item)
+				key := item.Hash()
 				enc.Encode(item)
 				e := badger.NewEntry(key, value.Bytes()).WithTTL(offlineBufferTTL)
 				if err := txn.SetEntry(e); err == badger.ErrTxnTooBig {
@@ -119,7 +118,10 @@ func genericSave[T any](
 				if err != nil {
 					continue
 				}
-				buffered = append(buffered, decoded)
+				var zero T
+				if decoded.GetExportName() == zero.GetExportName() {
+					buffered = append(buffered, decoded)
+				}
 			}
 
 			if len(buffered) > 0 {
@@ -129,7 +131,7 @@ func genericSave[T any](
 					txn := buffer.NewTransaction(true)
 					defer txn.Discard()
 					for _, item := range buffered {
-						key := keyFunc(item)
+						key := item.Hash()
 						_ = txn.Delete(key)
 					}
 					_ = txn.Commit()
