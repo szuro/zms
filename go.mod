@@ -7,6 +7,7 @@ toolchain go1.23.10
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/data/aztables v1.1.0
 	github.com/googleapis/gax-go/v2 v2.12.0
+	github.com/klauspost/compress v1.18.0
 	github.com/lib/pq v1.10.9
 	github.com/nxadm/tail v1.4.11
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
@@ -26,7 +27,6 @@ require (
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
