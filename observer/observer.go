@@ -65,6 +65,70 @@ func (p *baseObserver) Cleanup() {
 	}
 }
 
+func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTTL time.Duration) (err error) {
+	var value bytes.Buffer
+	enc := gob.NewEncoder(&value)
+	txn := buffer.NewTransaction(true)
+	for _, item := range toBuffer {
+		key := item.Hash()
+		enc.Encode(item)
+		e := badger.NewEntry(key, value.Bytes()).WithTTL(offlineBufferTTL)
+		if err := txn.SetEntry(e); err == badger.ErrTxnTooBig {
+			_ = txn.Commit()
+			txn := buffer.NewTransaction(true)
+			txn.SetEntry(e)
+		}
+	}
+	_ = txn.Commit()
+	return
+}
+
+func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered []T, err error) {
+	opts := badger.DefaultIteratorOptions
+	opts.PrefetchSize = batchSize
+	txn := buffer.NewTransaction(false)
+	defer txn.Discard()
+	it := txn.NewIterator(opts)
+	defer it.Close()
+
+	decodeFunc := func(val []byte) (T, error) {
+		var t T
+		dec := gob.NewDecoder(bytes.NewReader(val))
+		err := dec.Decode(&t)
+		return t, err
+	}
+
+	for it.Rewind(); it.Valid(); it.Next() {
+		item := it.Item()
+		val, err := item.ValueCopy(nil)
+		if err != nil {
+			continue
+		}
+		decoded, err := decodeFunc(val)
+		if err != nil {
+			continue
+		}
+		var zero T
+		if decoded.GetExportName() == zero.GetExportName() {
+			buffered = append(buffered, decoded)
+		}
+	}
+
+	return
+}
+
+func deleteFromBuffer[T zbx.Export](buffer *badger.DB, buffered []T) (err error) {
+	txn := buffer.NewTransaction(true)
+	defer txn.Discard()
+	for _, item := range buffered {
+		key := item.Hash()
+		_ = txn.Delete(key)
+	}
+	_ = txn.Commit()
+
+	return
+}
+
 // genericSave is a DRY helper for SaveHistory, SaveTrends, SaveEvents
 func genericSave[T zbx.Export](
 	items []T,
@@ -72,7 +136,6 @@ func genericSave[T zbx.Export](
 	saveFunc func([]T) ([]T, error),
 	buffer *badger.DB,
 	offlineBufferTTL time.Duration,
-	decodeFunc func([]byte) (T, error),
 ) bool {
 	toSave := make([]T, 0, len(items))
 	for _, item := range items {
@@ -84,57 +147,17 @@ func genericSave[T zbx.Export](
 
 	if offlineBufferTTL > 0 {
 		if err != nil {
-			var value bytes.Buffer
-			enc := gob.NewEncoder(&value)
-			txn := buffer.NewTransaction(true)
-			for _, item := range toBuffer {
-				key := item.Hash()
-				enc.Encode(item)
-				e := badger.NewEntry(key, value.Bytes()).WithTTL(offlineBufferTTL)
-				if err := txn.SetEntry(e); err == badger.ErrTxnTooBig {
-					_ = txn.Commit()
-					txn := buffer.NewTransaction(true)
-					txn.SetEntry(e)
-				}
-			}
-			_ = txn.Commit()
-		} else if err == nil {
-			fetchSize := len(toSave)
-			opts := badger.DefaultIteratorOptions
-			opts.PrefetchSize = fetchSize
-			txn := buffer.NewTransaction(false)
-			defer txn.Discard()
-			it := txn.NewIterator(opts)
-			defer it.Close()
-
-			var buffered []T
-			for it.Rewind(); it.Valid(); it.Next() {
-				item := it.Item()
-				val, err := item.ValueCopy(nil)
-				if err != nil {
-					continue
-				}
-				decoded, err := decodeFunc(val)
-				if err != nil {
-					continue
-				}
-				var zero T
-				if decoded.GetExportName() == zero.GetExportName() {
-					buffered = append(buffered, decoded)
-				}
-			}
-
+			err = saveToBuffer(buffer, toBuffer, offlineBufferTTL)
+		} else {
+			buffered, _ := fetchfromBuffer[T](buffer, len(toSave))
 			if len(buffered) > 0 {
+				//delete everything that was fetched from buffer
+				//even if some values were NOT successfuly resended
+				//depending on the implementation of saveFunc
+				//this may lead to data loss or duplicating of some data
 				_, err := saveFunc(buffered)
 				if err == nil {
-					// Remove successfully processed items from buffer
-					txn := buffer.NewTransaction(true)
-					defer txn.Discard()
-					for _, item := range buffered {
-						key := item.Hash()
-						_ = txn.Delete(key)
-					}
-					_ = txn.Commit()
+					deleteFromBuffer(buffer, buffered)
 				}
 			}
 		}

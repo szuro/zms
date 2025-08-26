@@ -1,9 +1,7 @@
 package observer
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 
@@ -56,12 +54,6 @@ func (az *AzureTable) SaveHistory(h []zbx.History) bool {
 		az.historyFunction,
 		az.buffer,
 		az.offlineBufferTTL,
-		func(val []byte) (zbx.History, error) {
-			var h zbx.History
-			dec := gob.NewDecoder(bytes.NewReader(val))
-			err := dec.Decode(&h)
-			return h, err
-		},
 	)
 }
 
@@ -101,12 +93,6 @@ func (az *AzureTable) SaveTrends(t []zbx.Trend) bool {
 		az.trendFunction,
 		az.buffer,
 		az.offlineBufferTTL,
-		func(val []byte) (zbx.Trend, error) {
-			var t zbx.Trend
-			dec := gob.NewDecoder(bytes.NewReader(val))
-			err := dec.Decode(&t)
-			return t, err
-		},
 	)
 }
 

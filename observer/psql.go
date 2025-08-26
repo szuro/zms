@@ -1,9 +1,7 @@
 package observer
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/gob"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -96,12 +94,6 @@ func (p *PSQL) SaveHistory(h []zbx.History) bool {
 		p.historyFunction,
 		p.buffer,
 		p.offlineBufferTTL,
-		func(val []byte) (zbx.History, error) {
-			var h zbx.History
-			dec := gob.NewDecoder(bytes.NewReader(val))
-			err := dec.Decode(&h)
-			return h, err
-		},
 	)
 }
 

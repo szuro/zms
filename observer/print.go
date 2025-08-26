@@ -1,8 +1,6 @@
 package observer
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
@@ -41,12 +39,6 @@ func (p *Print) SaveHistory(h []zbx.History) bool {
 		p.historyFunction,
 		p.buffer,
 		p.offlineBufferTTL,
-		func(val []byte) (zbx.History, error) {
-			var h zbx.History
-			dec := gob.NewDecoder(bytes.NewReader(val))
-			err := dec.Decode(&h)
-			return h, err
-		},
 	)
 }
 
@@ -71,12 +63,6 @@ func (p *Print) SaveTrends(t []zbx.Trend) bool {
 		p.trendFunction,
 		p.buffer,
 		p.offlineBufferTTL,
-		func(val []byte) (zbx.Trend, error) {
-			var t zbx.Trend
-			dec := gob.NewDecoder(bytes.NewReader(val))
-			err := dec.Decode(&t)
-			return t, err
-		},
 	)
 }
 
