@@ -2,6 +2,8 @@ package zms
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetBuffer(t *testing.T) {
@@ -68,6 +70,47 @@ func TestSetPort(t *testing.T) {
 			result := config.Http.ListenPort
 			if result != tt.expected {
 				t.Errorf("setPort(%d) = %d; want %d", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestZMSConf_setOfflineBuffers(t *testing.T) {
+	tests := []struct {
+		name     string
+		targets  []Target
+		expected []int
+	}{
+		{
+			name:     "All positive values",
+			targets:  []Target{{OfflineBufferTime: 10}, {OfflineBufferTime: 5}},
+			expected: []int{10, 5},
+		},
+		{
+			name:     "All negative values",
+			targets:  []Target{{OfflineBufferTime: -1}, {OfflineBufferTime: -100}},
+			expected: []int{0, 0},
+		},
+		{
+			name:     "Mixed values",
+			targets:  []Target{{OfflineBufferTime: -5}, {OfflineBufferTime: 0}, {OfflineBufferTime: 7}},
+			expected: []int{0, 0, 7},
+		},
+		{
+			name:     "Empty targets",
+			targets:  []Target{},
+			expected: []int{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := &ZMSConf{
+				Targets: tt.targets,
+			}
+			conf.setOfflineBuffers()
+			for i, target := range conf.Targets {
+				require.Equal(t, tt.expected[i], target.OfflineBufferTime)
 			}
 		})
 	}

@@ -92,11 +92,13 @@ func findLastReadOffset(indexDB *badger.DB, filename string) (location *tail.See
 
 	err = indexDB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(filename))
-		err = item.Value(func(val []byte) error {
-			offset := bytesToInt64(val)
-			location.Offset = offset
-			return nil
-		})
+		if item != nil {
+			err = item.Value(func(val []byte) error {
+				offset := bytesToInt64(val)
+				location.Offset = offset
+				return nil
+			})
+		}
 		if err != nil {
 			location.Offset = 0
 		}
@@ -105,8 +107,8 @@ func findLastReadOffset(indexDB *badger.DB, filename string) (location *tail.See
 	})
 
 	f, err := os.Stat(filename)
-	// ofset greater than size means the file was rotated
-	if location.Offset > f.Size() {
+	// offset greater than size means the file was rotated
+	if err != nil || location.Offset > f.Size() {
 		location.Offset = 0
 	}
 

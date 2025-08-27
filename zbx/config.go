@@ -33,6 +33,7 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 	if err != nil {
 		panic(fmt.Sprintf("Could not open file: %s", err))
 	}
+	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {

@@ -74,12 +74,12 @@ func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTT
 		enc.Encode(item)
 		e := badger.NewEntry(key, value.Bytes()).WithTTL(offlineBufferTTL)
 		if err := txn.SetEntry(e); err == badger.ErrTxnTooBig {
-			_ = txn.Commit()
+			err = txn.Commit()
 			txn := buffer.NewTransaction(true)
 			txn.SetEntry(e)
 		}
 	}
-	_ = txn.Commit()
+	err = txn.Commit()
 	return
 }
 
@@ -111,6 +111,9 @@ func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered [
 		var zero T
 		if decoded.GetExportName() == zero.GetExportName() {
 			buffered = append(buffered, decoded)
+			if len(buffered) >= batchSize {
+				break
+			}
 		}
 	}
 
