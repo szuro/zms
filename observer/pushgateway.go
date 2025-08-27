@@ -75,7 +75,7 @@ func (hc historyCollector) Collect(ch chan<- prometheus.Metric) {
 	metrics := make(map[int]prometheus.Metric, 0)
 
 	for _, hist := range hc.history {
-		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
+		if !hist.IsNumeric() {
 			// Log?
 			continue
 		}
