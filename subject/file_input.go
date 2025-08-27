@@ -79,15 +79,15 @@ func (fi *FileInput) mkSubjects() {
 		switch v {
 		case zbx.HISTORY:
 			hs := NewSubject[zbx.History]()
-			hs.Funnel, files = zbx.FileReaderGenerator[zbx.History](zabbix, fi.fileIndex)
+			hs.Funnel, files = zbx.FileReaderGenerator[zbx.History](zabbix, fi.fileIndex, fi.config.BufferSize*2)
 			fi.subjects[zbx.HISTORY] = &hs
 		case zbx.TREND:
 			ts := NewSubject[zbx.Trend]()
-			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Trend](zabbix, fi.fileIndex)
+			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Trend](zabbix, fi.fileIndex, fi.config.BufferSize*2)
 			fi.subjects[zbx.TREND] = &ts
 		case zbx.EVENT:
 			ts := NewSubject[zbx.Event]()
-			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Event](zabbix, fi.fileIndex)
+			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Event](zabbix, fi.fileIndex, fi.config.BufferSize*2)
 			fi.subjects[zbx.EVENT] = &ts
 		default:
 			slog.Error("Export not supported", slog.Any("export", v))

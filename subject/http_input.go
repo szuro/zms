@@ -27,12 +27,12 @@ func NewHTTPInput(zmsConf zms.ZMSConf) (*HTTPInput, error) {
 		},
 	}
 	historySubject := NewSubject[zbx.History]()
-	historySubject.Funnel = make(chan any, zmsConf.BufferSize)
+	historySubject.Funnel = make(chan any, zmsConf.BufferSize*2)
 	historySubject.SetBuffer(zmsConf.BufferSize)
 	hi.subjects[zbx.HISTORY] = &historySubject
 
 	eventSubject := NewSubject[zbx.Event]()
-	eventSubject.Funnel = make(chan any, zmsConf.BufferSize)
+	eventSubject.Funnel = make(chan any, zmsConf.BufferSize*2)
 	eventSubject.SetBuffer(zmsConf.BufferSize)
 	hi.subjects[zbx.EVENT] = &eventSubject
 
@@ -67,17 +67,14 @@ func (hi *HTTPInput) handleHistory(w http.ResponseWriter, r *http.Request) {
 		subject, ok := hi.subjects[zbx.HISTORY]
 		if !ok {
 			slog.Error("No subject!")
+			return
 		}
 		funnel := subject.GetFunnel()
 		if funnel == nil {
 			slog.Error("No funnel for HISTORY export", slog.Any("subject", zbx.HISTORY))
 			return
 		}
-		select {
-		case funnel <- hExport:
-		default:
-			slog.Warn("Funnel for HISTORY is full, dropping data")
-		}
+		funnel <- hExport
 	})
 }
 
@@ -91,17 +88,14 @@ func (hi *HTTPInput) handleEvents(w http.ResponseWriter, r *http.Request) {
 		subject, ok := hi.subjects[zbx.EVENT]
 		if !ok {
 			slog.Error("No subject!")
+			return
 		}
 		funnel := subject.GetFunnel()
 		if funnel == nil {
 			slog.Error("No funnel for EVENT export", slog.Any("subject", zbx.EVENT))
 			return
 		}
-		select {
-		case funnel <- eExport:
-		default:
-			slog.Warn("Funnel for EVENT is full, dropping data")
-		}
+		funnel <- eExport
 	})
 }
 

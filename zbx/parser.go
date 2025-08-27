@@ -149,11 +149,11 @@ func makeCounters(file_type string, file_index int) (parsedCounter, parsedErrorC
 	return
 }
 
-func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *badger.DB) (c chan any, tailedFiles []*tail.Tail) {
+func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *badger.DB, chanSize int) (c chan any, tailedFiles []*tail.Tail) {
 	var t T
 	file_type := t.GetExportName()
 	tailedFiles = make([]*tail.Tail, zbx.DBSyncers+1) // make room for main export
-	c = make(chan any, 100)
+	c = make(chan any, chanSize)
 
 	exportFiles := generateFilePaths[T](zbx)
 	for i, filename := range exportFiles {
