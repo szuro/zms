@@ -49,8 +49,8 @@ func (hi *HTTPInput) Start() {
 	hi.baseInput.Start()
 }
 
-func (hi *HTTPInput) Stop() {
-	hi.baseInput.Stop()
+func (hi *HTTPInput) Stop() error {
+	return hi.baseInput.Stop()
 }
 
 func (hi *HTTPInput) IsReady() bool {

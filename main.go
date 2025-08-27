@@ -82,8 +82,10 @@ func main() {
 	for {
 		switch <-sig {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			input.Stop()
-
+			err := input.Stop()
+			if err != nil {
+				slog.Error("stopping failed", slog.Any("error", err))
+			}
 			slog.Info("Exiting...")
 			return
 		default:

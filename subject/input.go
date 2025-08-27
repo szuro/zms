@@ -14,7 +14,7 @@ type Inputer interface {
 	setFilter()
 	Prepare()
 	Start()
-	Stop()
+	Stop() error
 }
 
 type baseInput struct {
@@ -37,8 +37,9 @@ func (bs *baseInput) Start() {
 	}
 }
 
-func (bs *baseInput) Stop() {
+func (bs *baseInput) Stop() error {
 	bs.cleanup()
+	return nil
 }
 
 func (bs *baseInput) cleanup() {

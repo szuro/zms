@@ -48,23 +48,28 @@ func (fi *FileInput) Start() {
 	fi.baseInput.Start()
 }
 
-func (fi *FileInput) Stop() {
+func (fi *FileInput) Stop() error {
 	for _, f := range fi.activeTails {
-		f.Stop()
 		offset, err := f.Tell()
-		f.Cleanup()
 		if err != nil {
-			continue
+			slog.Error("cannot get file offset, resetting to 0", slog.Any("file", f.Filename), slog.Any("error", err))
+			offset = 0
 		}
+		f.Stop()
+		f.Cleanup()
 
 		err = fi.fileIndex.Update(func(txn *badger.Txn) error {
 			err := txn.Set([]byte(f.Filename), int64ToBytes(offset))
 			return err
 		})
+		if err != nil {
+			slog.Error("error when saving file offset", slog.Any("file", f.Filename), slog.Any("error", err))
+		}
 
 	}
 	fi.fileIndex.Close()
-	fi.baseInput.Stop()
+	return fi.baseInput.Stop()
+
 }
 
 func (fi *FileInput) mkSubjects() {
