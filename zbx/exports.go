@@ -1,6 +1,9 @@
 package zbx
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	HISTORY_EXPORT  string = "history-history-syncer-%d.ndjson"
@@ -40,18 +43,25 @@ type Export interface {
 	History | Trend | Event
 	ShowTags() []Tag
 	GetExportName() string
+	Hash() []byte
 }
 
 type History struct {
-	Host   *Host `json:"host,omitempty"`
-	ItemID int   `json:"itemid"`
-	Name   string
-	Clock  int `json:"clock"`
-	Groups []string
-	Ns     int
-	Value  json.Token `json:"value"`
-	Tags   []Tag      `json:"item_tags"`
-	Type   int
+	Host   *Host      `json:"host,omitempty"` // Host name and visible name of the item host
+	ItemID int        `json:"itemid"`         // Item ID
+	Name   string     // Visible item name
+	Clock  int        `json:"clock"` // Number of seconds since Epoch to the moment when value was collected (integer part)
+	Groups []string   // List of host groups of the item host
+	Ns     int        // Number of nanoseconds to be added to clock to get a precise value collection time
+	Value  json.Token `json:"value"`     // Collected item value (number for numeric items, string for text items)
+	Tags   []Tag      `json:"item_tags"` // List of item tags (can be empty)
+	Type   int        // Collected value type: 0 - numeric float, 1 - character, 2 - log, 3 - numeric unsigned, 4 - text, 5 - binary
+
+	Timestamp int    `json:"timestamp,omitempty"` // Log only. 0 if not available.
+	Source    string `json:"source,omitempty"`    // Log only. Source of the log entry. Empty if not available.
+	Severity  int    `json:"severity,omitempty"`  // Log only. Severity of the log entry (0 - Not classified, 1 - Information, 2 - Warning, 3 - Average, 4 - High, 5 - Disaster). Empty if not available.
+	EventID   int    `json:"eventid,omitempty"`   // Log only. Event ID if available, 0 otherwise.
+
 }
 
 func (h History) ShowTags() []Tag {
@@ -62,16 +72,24 @@ func (h History) GetExportName() string {
 	return HISTORY
 }
 
+func (h History) Hash() []byte {
+	return []byte("history_" + fmt.Sprint(h.ItemID) + ":" + fmt.Sprint(h.Clock) + ":" + fmt.Sprint(h.Ns))
+}
+
+func (h History) IsNumeric() bool {
+	return h.Type == FLOAT || h.Type == UNSIGNED
+}
+
 type Trend struct {
-	Host          *Host `json:"host,omitempty"`
-	ItemID        int   `json:"itemid"`
-	Name          string
-	Clock         int
-	Count         int
-	Groups        []string
-	Min, Max, Avg float64
-	Tags          []Tag `json:"item_tags"`
-	Type          int
+	Host          *Host    `json:"host,omitempty"` // Host name and visible name of the item host
+	ItemID        int      `json:"itemid"`         // Item ID
+	Name          string   // Visible item name
+	Clock         int      // Number of seconds since Epoch to the moment when value was collected (integer part)
+	Count         int      // Number of values collected for a given hour
+	Groups        []string // List of host groups of the item host
+	Min, Max, Avg float64  // Minimum, maximum, and average item value for a given hour
+	Tags          []Tag    `json:"item_tags"` // List of item tags (can be empty)
+	Type          int      // Value type: 0 - numeric float, 3 - numeric unsigned
 }
 
 func (t Trend) ShowTags() []Tag {
@@ -82,17 +100,21 @@ func (t Trend) GetExportName() string {
 	return TREND
 }
 
+func (t Trend) Hash() []byte {
+	return []byte("trend_" + fmt.Sprint(t.ItemID) + ":" + fmt.Sprint(t.Clock))
+}
+
 type Event struct {
-	Clock    int      `json:"clock"`
-	NS       int      `json:"ns"`
-	Value    int      `json:"value"`
-	EventID  int      `json:"eventid"`
-	PEventID int      `json:"p_eventid"`
-	Name     string   `json:"name,omitempty"`
-	Severity int      `json:"severity,omitempty"`
-	Hosts    []Host   `json:"hosts,omitempty"`
-	Groups   []string `json:"groups,omitempty"`
-	Tags     []Tag    `json:"tags,omitempty"`
+	Clock    int      `json:"clock"`               // Number of seconds since Epoch to the moment when problem was detected or resolved (integer part)
+	NS       int      `json:"ns"`                  // Number of nanoseconds to be added to clock to get a precise problem detection/resolution time
+	Value    int      `json:"value"`               // 1 for problem, 0 for recovery
+	EventID  int      `json:"eventid"`             // Problem or recovery event ID
+	PEventID int      `json:"p_eventid,omitempty"` // Problem event ID (for recovery events)
+	Name     string   `json:"name,omitempty"`      // Problem event name (problem only)
+	Severity int      `json:"severity,omitempty"`  // Problem event severity (problem only): 0 - Not classified, 1 - Information, 2 - Warning, 3 - Average, 4 - High, 5 - Disaster
+	Hosts    []Host   `json:"hosts,omitempty"`     // List of hosts involved in the trigger expression (problem only)
+	Groups   []string `json:"groups,omitempty"`    // List of host groups of all hosts involved (problem only)
+	Tags     []Tag    `json:"tags,omitempty"`      // List of problem tags (problem only, can be empty)
 }
 
 func (e Event) ShowTags() []Tag {
@@ -101,4 +123,8 @@ func (e Event) ShowTags() []Tag {
 
 func (e Event) GetExportName() string {
 	return EVENT
+}
+
+func (e Event) Hash() []byte {
+	return []byte("event_" + fmt.Sprint(e.EventID))
 }

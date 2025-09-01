@@ -33,28 +33,52 @@ func NewPrint(name, out string) (p *Print) {
 }
 
 func (p *Print) SaveHistory(h []zbx.History) bool {
+	return genericSave[zbx.History](
+		h,
+		func(H zbx.History) bool { return p.localFilter.EvaluateFilter(H.Tags) },
+		p.historyFunction,
+		p.buffer,
+		p.offlineBufferTTL,
+	)
+}
+
+func (p *Print) historyFunction(h []zbx.History) (failed []zbx.History, err error) {
+	failed = make([]zbx.History, 0, len(h))
 	for _, H := range h {
-		if !p.localFilter.EvaluateFilter(H.Tags) {
-			continue
-		}
 		msg := fmt.Sprintf("Host: %s; Item: %s; Time: %d; Value: %s", H.Host.Host, H.Name, H.Clock, H.Value)
-		fmt.Fprintln(p.out, msg)
+		_, err := fmt.Fprintln(p.out, msg)
+		if err != nil {
+			p.monitor.historyValuesFailed.Inc()
+			failed = append(failed, H)
+		}
 		p.monitor.historyValuesSent.Inc()
 	}
-	return true
+	return failed, err
 }
 
 func (p *Print) SaveTrends(t []zbx.Trend) bool {
+	return genericSave[zbx.Trend](
+		t,
+		func(T zbx.Trend) bool { return p.localFilter.EvaluateFilter(T.Tags) },
+		p.trendFunction,
+		p.buffer,
+		p.offlineBufferTTL,
+	)
+}
+
+func (p *Print) trendFunction(t []zbx.Trend) (failed []zbx.Trend, err error) {
+	failed = make([]zbx.Trend, 0, len(t))
 	for _, T := range t {
-		if !p.localFilter.EvaluateFilter(T.Tags) {
-			continue
-		}
 		msg := fmt.Sprintf(
 			"Host: %s; Item: %s; Time: %d; Min/Max/Avg: %f/%f/%f",
 			T.Host.Host, T.Name, T.Clock, T.Min, T.Max, T.Avg,
 		)
-		fmt.Fprintln(p.out, msg)
-		p.monitor.trendsValuesSent.Inc()
+		_, err := fmt.Fprintln(p.out, msg)
+		if err != nil {
+			p.monitor.historyValuesFailed.Inc()
+			failed = append(failed, T)
+		}
+		p.monitor.historyValuesSent.Inc()
 	}
-	return true
+	return failed, err
 }

@@ -88,56 +88,66 @@ func unixToStamp(unix int) (stamp string) {
 }
 
 func (p *PSQL) SaveHistory(h []zbx.History) bool {
+	return genericSave[zbx.History](
+		h,
+		func(H zbx.History) bool { return p.localFilter.EvaluateFilter(H.Tags) },
+		p.historyFunction,
+		p.buffer,
+		p.offlineBufferTTL,
+	)
+}
+
+func (p *PSQL) historyFunction(h []zbx.History) (failed []zbx.History, err error) {
 	base := "INSERT INTO performance.messages (tagname, value, quality, timestamp, servertimestamp) VALUES ($1, $2, $3, $4, $5)"
-
-	acceptedValues := make([]zbx.History, 0)
-
-	for _, H := range h {
-		if !p.localFilter.EvaluateFilter(H.Tags) {
-			continue
-		}
-
-		acceptedValues = append(acceptedValues, H)
-	}
+	historyLen := float64(len(h))
+	failed = make([]zbx.History, 0, len(h))
 
 	p.updateStats()
-
-	if len(acceptedValues) == 0 {
-		return true
-	}
 
 	txn, err := p.dbConn.Begin()
 	if err != nil {
 		slog.Error("Failed to begin transaction", slog.Any("name", p.name), slog.Any("error", err))
-		return false
+		p.monitor.historyValuesFailed.Add(historyLen)
+		failed = h
+		return failed, err
 	}
 	stmt, err := txn.Prepare(base)
 	if err != nil {
 		txn.Rollback()
 		slog.Error("Failed to prepare statement", slog.Any("name", p.name), slog.Any("error", err))
+		p.monitor.historyValuesFailed.Add(historyLen)
+		failed = h
+		return failed, err
 	}
 	defer stmt.Close()
 
-	for _, H := range acceptedValues {
+	for _, H := range h {
+		p.monitor.historyValuesSent.Inc()
 		tag := fmt.Sprintf("%s.%s.%s", H.Host.Host, H.Host.Host, H.Name)
 		stamp := unixToStamp(H.Clock)
 		_, err := stmt.Exec(tag, H.Value, true, stamp, stamp)
 		if err != nil {
 			txn.Rollback()
 			slog.Error("Failed to execute statement", slog.Any("name", p.name), slog.Any("error", err))
-			p.monitor.historyValuesFailed.Inc()
+			p.monitor.historyValuesFailed.Add(historyLen)
+			failed = h
+			return failed, err
 		}
 
-		p.monitor.historyValuesSent.Inc()
 	}
 
 	err = txn.Commit()
 	if err != nil {
 		slog.Error("Failed to commit transaction", slog.Any("name", p.name), slog.Any("error", err))
+		p.monitor.historyValuesFailed.Add(historyLen)
+		failed = h
+		return failed, err
 	}
 
 	p.updateStats()
-	return true
+	p.monitor.historyValuesFailed.Add(historyLen)
+	failed = h
+	return failed, err
 }
 
 func (p *PSQL) updateStats() {

@@ -14,7 +14,7 @@ func TestGetFailoverDelay(t *testing.T) {
 		{
 			name:     "Valid input with delay",
 			input:    "Some text here. Failover delay: 30 seconds",
-			expected: time.Duration(30),
+			expected: time.Duration(30) * time.Second,
 		},
 	}
 

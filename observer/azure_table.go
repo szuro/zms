@@ -48,10 +48,18 @@ func NewAzureTable(name, conn string) (client *AzureTable, err error) {
 }
 
 func (az *AzureTable) SaveHistory(h []zbx.History) bool {
+	return genericSave[zbx.History](
+		h,
+		func(H zbx.History) bool { return az.localFilter.EvaluateFilter(H.Tags) },
+		az.historyFunction,
+		az.buffer,
+		az.offlineBufferTTL,
+	)
+}
+
+func (az *AzureTable) historyFunction(h []zbx.History) (failed []zbx.History, err error) {
+	failed = make([]zbx.History, 0, len(h))
 	for _, H := range h {
-		if !az.localFilter.EvaluateFilter(H.Tags) {
-			continue
-		}
 		entity := HistoryEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(H.ItemID),
@@ -72,16 +80,25 @@ func (az *AzureTable) SaveHistory(h []zbx.History) bool {
 		if err != nil {
 			slog.Error("Failed to save entity", slog.Any("name", az.name), slog.Any("export", "history"), slog.Any("error", err))
 			az.monitor.historyValuesFailed.Inc()
+			failed = append(failed, H)
 		}
 	}
-	return true
+	return failed, err
 }
 
 func (az *AzureTable) SaveTrends(t []zbx.Trend) bool {
+	return genericSave[zbx.Trend](
+		t,
+		func(T zbx.Trend) bool { return az.localFilter.EvaluateFilter(T.Tags) },
+		az.trendFunction,
+		az.buffer,
+		az.offlineBufferTTL,
+	)
+}
+
+func (az *AzureTable) trendFunction(t []zbx.Trend) (failed []zbx.Trend, err error) {
+	failed = make([]zbx.Trend, 0, len(t))
 	for _, T := range t {
-		if !az.localFilter.EvaluateFilter(T.Tags) {
-			continue
-		}
 		entity := TrendEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(T.ItemID),
@@ -102,8 +119,9 @@ func (az *AzureTable) SaveTrends(t []zbx.Trend) bool {
 		if err != nil {
 			slog.Error("Failed to save entity", slog.Any("name", az.name), slog.Any("export", "trends"), slog.Any("error", err))
 			az.monitor.historyValuesFailed.Inc()
+			failed = append(failed, T)
 		}
 		az.monitor.trendsValuesFailed.Inc()
 	}
-	return true
+	return failed, err
 }

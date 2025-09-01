@@ -8,12 +8,13 @@ import (
 )
 
 type Target struct {
-	Name       string
-	Type       string
-	Connection string
-	TagFilter  filter.Filter `yaml:"tag_filters"`
-	Source     []string
-	Options    map[string]string
+	Name              string
+	Type              string
+	Connection        string
+	OfflineBufferTime int64         `yaml:"offline_buffer_time"` // Time in hours to keep offline buffer
+	TagFilter         filter.Filter `yaml:"tag_filters"`
+	Source            []string
+	Options           map[string]string
 }
 
 func (t *Target) ToObserver() (obs observer.Observer, err error) {

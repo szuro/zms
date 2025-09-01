@@ -94,7 +94,7 @@ func (cm *CloudMonitor) SaveHistory(h []zbx.History) bool {
 		if !cm.localFilter.EvaluateFilter(hist.Tags) {
 			continue
 		}
-		if hist.Type != zbx.FLOAT && hist.Type != zbx.UNSIGNED {
+		if !hist.IsNumeric() {
 			continue
 		}
 
