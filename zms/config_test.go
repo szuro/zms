@@ -79,27 +79,27 @@ func TestZMSConf_setOfflineBuffers(t *testing.T) {
 	tests := []struct {
 		name     string
 		targets  []Target
-		expected []int
+		expected []int64
 	}{
 		{
 			name:     "All positive values",
 			targets:  []Target{{OfflineBufferTime: 10}, {OfflineBufferTime: 5}},
-			expected: []int{10, 5},
+			expected: []int64{10, 5},
 		},
 		{
 			name:     "All negative values",
 			targets:  []Target{{OfflineBufferTime: -1}, {OfflineBufferTime: -100}},
-			expected: []int{0, 0},
+			expected: []int64{0, 0},
 		},
 		{
 			name:     "Mixed values",
 			targets:  []Target{{OfflineBufferTime: -5}, {OfflineBufferTime: 0}, {OfflineBufferTime: 7}},
-			expected: []int{0, 0, 7},
+			expected: []int64{0, 0, 7},
 		},
 		{
 			name:     "Empty targets",
 			targets:  []Target{},
-			expected: []int{},
+			expected: []int64{},
 		},
 	}
 

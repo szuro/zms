@@ -75,8 +75,10 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 }
 
 func (zc *ZMSConf) setBuffer(buffer int) {
-	if buffer == 0 {
-		buffer = 100
+	if buffer <= 0 {
+		zc.BufferSize = 100
+	} else {
+		zc.BufferSize = buffer
 	}
 }
 
@@ -99,9 +101,9 @@ func (zc *ZMSConf) setPort(port int) {
 }
 
 func (zc *ZMSConf) setOfflineBuffers() {
-	for _, target := range zc.Targets {
-		if target.OfflineBufferTime < 0 {
-			target.OfflineBufferTime = 0
+	for i, _ := range zc.Targets {
+		if zc.Targets[i].OfflineBufferTime < 0 {
+			zc.Targets[i].OfflineBufferTime = 0
 		}
 	}
 }
