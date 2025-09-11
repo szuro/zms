@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"log/slog"
-	"os"
+	"path"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms/filter"
+	"szuro.net/zms/zms/logger"
 )
 
 type Observer interface {
@@ -44,14 +45,15 @@ func (p *baseObserver) SetName(name string) {
 	p.name = name
 }
 
-func (p *baseObserver) InitBuffer(path string, t int64) {
+func (p *baseObserver) InitBuffer(bufferPath string, t int64) {
 	p.offlineBufferTTL = time.Duration(t) * time.Hour
 	if p.offlineBufferTTL > 0 {
 		db, err := badger.Open(badger.DefaultOptions(
-			path + string(os.PathSeparator) + p.name + ".db",
-		))
+			path.Join(bufferPath, p.name+".db"),
+		).WithLogger(logger.Default()))
+		logger.Debug("Initialized BadgerDB for offline buffering", slog.String("path", path.Join(bufferPath, p.name+".db")))
 		if err != nil {
-			slog.Error("Failed to open BadgerDB for offline buffering", "error", err)
+			logger.Error("Failed to open BadgerDB for offline buffering", slog.Any("error", err))
 		}
 		p.buffer = db
 	}
@@ -75,6 +77,9 @@ func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTT
 		e := badger.NewEntry(key, value.Bytes()).WithTTL(offlineBufferTTL)
 		if err := txn.SetEntry(e); err == badger.ErrTxnTooBig {
 			err = txn.Commit()
+			if err != nil {
+				logger.Error("commit error")
+			}
 			txn := buffer.NewTransaction(true)
 			txn.SetEntry(e)
 		}
@@ -102,10 +107,12 @@ func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered [
 		item := it.Item()
 		val, err := item.ValueCopy(nil)
 		if err != nil {
+			logger.Error("Failed to copy value from buffer", slog.String("observer", buffer.Opts().Dir), slog.Any("error", err))
 			continue
 		}
 		decoded, err := decodeFunc(val)
 		if err != nil {
+			logger.Error("Failed to decode from buffer", slog.String("observer", buffer.Opts().Dir), slog.Any("error", err))
 			continue
 		}
 		var zero T
@@ -125,9 +132,15 @@ func deleteFromBuffer[T zbx.Export](buffer *badger.DB, buffered []T) (err error)
 	defer txn.Discard()
 	for _, item := range buffered {
 		key := item.Hash()
-		_ = txn.Delete(key)
+		err = txn.Delete(key)
+		if err != nil {
+			logger.Error("Failed to delete from buffer", slog.String("observer", buffer.Opts().Dir), slog.Any("error", err))
+		}
 	}
-	_ = txn.Commit()
+	err = txn.Commit()
+	if err != nil {
+		logger.Error("Failed to commit", slog.String("observer", buffer.Opts().Dir), slog.Any("error", err))
+	}
 
 	return
 }
@@ -147,10 +160,16 @@ func genericSave[T zbx.Export](
 		}
 	}
 	toBuffer, err := saveFunc(toSave)
+	if err != nil {
+		logger.Error("Failed to save items using saveFunc", slog.Any("error", err))
+	}
 
 	if offlineBufferTTL > 0 {
 		if err != nil {
 			err = saveToBuffer(buffer, toBuffer, offlineBufferTTL)
+			if err != nil {
+				logger.Error("Failed to save items to offline buffer", slog.Any("error", err))
+			}
 		} else {
 			buffered, _ := fetchfromBuffer[T](buffer, len(toSave))
 			if len(buffered) > 0 {
@@ -161,6 +180,8 @@ func genericSave[T zbx.Export](
 				_, err := saveFunc(buffered)
 				if err == nil {
 					deleteFromBuffer(buffer, buffered)
+				} else {
+					logger.Error("Failed to re-send buffered items", slog.Any("error", err))
 				}
 			}
 		}

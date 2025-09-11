@@ -12,6 +12,7 @@ import (
 	"szuro.net/zms/subject"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
+	"szuro.net/zms/zms/logger"
 
 	"net/http"
 
@@ -40,7 +41,7 @@ func main() {
 	}
 
 	zmsConfig := zms.ParseZMSConfig(*zmsPath)
-	slog.SetLogLoggerLevel(zmsConfig.GetLogLevel())
+	logger.SetLogLevel(zmsConfig.GetLogLevel())
 
 	var input subject.Inputer
 
@@ -48,14 +49,14 @@ func main() {
 	case zms.FILE_MODE:
 		zbxConfig, _ := zbx.ParseZabbixConfig(zmsConfig.ServerConfig)
 		if zbxConfig.ExportDir == "" {
-			slog.Error("Export not enabled. Aborting.")
+			logger.Error("Export not enabled. Aborting.")
 			return
 		}
 		input, _ = subject.NewFileInput(zbxConfig, zmsConfig)
 	case zms.HTTP_MODE:
 		input, _ = subject.NewHTTPInput(zmsConfig)
 	default:
-		slog.Error("Unknown mode", slog.String("mode", zmsConfig.Mode))
+		logger.Error("Unknown mode", slog.String("mode", zmsConfig.Mode))
 		os.Exit(1)
 	}
 
@@ -68,12 +69,12 @@ func main() {
 
 	for isActive := input.IsReady(); !isActive; {
 		delay := time.Duration(zbx.DEFAULT_DELAY)
-		slog.Info("Input is not active, sleeping for ", slog.Any("delay", delay))
+		logger.Info("Input is not active, sleeping for ", slog.Duration("delay", delay))
 		time.Sleep(delay)
 		isActive = input.IsReady()
 	}
 
-	slog.Info("Input is active")
+	logger.Info("Input is active")
 
 	input.Start()
 
@@ -84,9 +85,9 @@ func main() {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 			err := input.Stop()
 			if err != nil {
-				slog.Error("stopping failed", slog.Any("error", err))
+				logger.Error("stopping failed", slog.Any("error", err))
 			}
-			slog.Info("Exiting...")
+			logger.Info("Exiting...")
 			return
 		default:
 			return

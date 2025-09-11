@@ -3,12 +3,13 @@ package subject
 import (
 	"encoding/binary"
 	"log/slog"
-	"os"
+	"path"
 
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/nxadm/tail"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
+	"szuro.net/zms/zms/logger"
 )
 
 type FileInput struct {
@@ -23,11 +24,12 @@ func NewFileInput(zbxConf zbx.ZabbixConf, zmsConf zms.ZMSConf) (fi *FileInput, e
 	fi.config = zmsConf
 	fi.zbxConf = zbxConf
 	fi.subjects = make(map[string]Subjecter)
-	db, err := badger.Open(badger.DefaultOptions(
-		zmsConf.WorkingDir + string(os.PathSeparator) + "index.db",
-	))
+
+	dbPath := path.Join(zmsConf.WorkingDir, "index.db")
+	db, err := badger.Open(badger.DefaultOptions(dbPath).WithLogger(logger.Default()))
+	logger.Debug("Initialized BadgerDB for file index", slog.String("path", dbPath))
 	if err != nil {
-		slog.Error("Failed to open BadgerDB for offline buffering", "error", err)
+		logger.Error("Failed to open BadgerDB for file index", slog.Any("error", err))
 	}
 	fi.fileIndex = db
 
@@ -52,7 +54,7 @@ func (fi *FileInput) Stop() error {
 	for _, f := range fi.activeTails {
 		offset, err := f.Tell()
 		if err != nil {
-			slog.Error("cannot get file offset, resetting to 0", slog.Any("file", f.Filename), slog.Any("error", err))
+			logger.Error("cannot get file offset, resetting to 0", slog.String("file", f.Filename), slog.Any("error", err))
 			offset = 0
 		}
 		f.Stop()
@@ -63,7 +65,7 @@ func (fi *FileInput) Stop() error {
 			return err
 		})
 		if err != nil {
-			slog.Error("error when saving file offset", slog.Any("file", f.Filename), slog.Any("error", err))
+			logger.Error("error when saving file offset", slog.String("file", f.Filename), slog.Any("error", err))
 		}
 
 	}
@@ -90,7 +92,7 @@ func (fi *FileInput) mkSubjects() {
 			ts.Funnel, files = zbx.FileReaderGenerator[zbx.Event](zabbix, fi.fileIndex, fi.config.BufferSize*2)
 			fi.subjects[zbx.EVENT] = &ts
 		default:
-			slog.Error("Export not supported", slog.Any("export", v))
+			logger.Error("Export not supported", slog.String("export", v))
 		}
 	}
 	fi.activeTails = append(fi.activeTails, files...)

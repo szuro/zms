@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"szuro.net/zms/zms/logger"
 )
 
 const (
@@ -49,22 +51,22 @@ func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
 
 	outString = strings.TrimRight(string(out[:]), "\n")
 	if err != nil {
-		slog.Error("Failed to get HA status", slog.Any("error", err))
+		logger.Error("Failed to get HA status", slog.Any("error", err))
 	} else if outString == INITIAL_SYNC {
-		slog.Info("Waiting for initial sync to end...")
-		time.Sleep(30 * time.Second)
+		logger.Info("Waiting for initial sync to end...")
+		time.Sleep(DEFAULT_DELAY)
 	}
 
 	lines := strings.Split(outString, "\n")
 
 	if len(lines) == HEADER_LEN {
-		slog.Info("Node running in standalone mode")
+		logger.Info("Node running in standalone mode")
 		nodeIsActive = true
 	}
 
 	if strings.TrimRight(lines[0], "\n") == NON_ACTIVE {
 		var d time.Duration = DEFAULT_DELAY
-		slog.Info("Node in non-active mode, waiting", slog.Any("delay", d))
+		logger.Info("Node in non-active mode, waiting", slog.Duration("delay", d))
 		delay = time.Duration(d * time.Second)
 		return
 	} else {

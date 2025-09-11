@@ -9,6 +9,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
 	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms/logger"
 )
 
 type HistoryEntity struct {
@@ -72,13 +73,13 @@ func (az *AzureTable) historyFunction(h []zbx.History) (failed []zbx.History, er
 		entity.Host = nil
 		marshalled, err := json.Marshal(entity)
 		if err != nil {
-			slog.Error("Failed to marshall to Entity", slog.Any("name", az.name), slog.Any("export", "history"), slog.Any("error", err))
+			logger.Error("Failed to marshall to Entity", slog.String("name", az.name), slog.String("export", "history"), slog.Any("error", err))
 			continue
 		}
 		_, err = az.h.AddEntity(context.TODO(), marshalled, nil)
 		az.monitor.historyValuesSent.Inc()
 		if err != nil {
-			slog.Error("Failed to save entity", slog.Any("name", az.name), slog.Any("export", "history"), slog.Any("error", err))
+			logger.Error("Failed to save entity", slog.String("name", az.name), slog.String("export", "history"), slog.Any("error", err))
 			az.monitor.historyValuesFailed.Inc()
 			failed = append(failed, H)
 		}
@@ -111,13 +112,13 @@ func (az *AzureTable) trendFunction(t []zbx.Trend) (failed []zbx.Trend, err erro
 		entity.Host = nil
 		marshalled, err := json.Marshal(entity)
 		if err != nil {
-			slog.Error("Failed to marshall to Entity", slog.Any("name", az.name), slog.Any("export", "trends"), slog.Any("error", err))
+			logger.Error("Failed to marshall to Entity", slog.String("name", az.name), slog.String("export", "trends"), slog.Any("error", err))
 			continue
 		}
 		_, err = az.t.AddEntity(context.TODO(), marshalled, nil)
 		az.monitor.trendsValuesSent.Inc()
 		if err != nil {
-			slog.Error("Failed to save entity", slog.Any("name", az.name), slog.Any("export", "trends"), slog.Any("error", err))
+			logger.Error("Failed to save entity", slog.String("name", az.name), slog.String("export", "trends"), slog.Any("error", err))
 			az.monitor.historyValuesFailed.Inc()
 			failed = append(failed, T)
 		}

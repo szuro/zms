@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms/logger"
 )
 
 type PSQL struct {
@@ -27,10 +28,10 @@ func NewPSQL(name, connStr string, opts map[string]string) (p *PSQL, err error) 
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		slog.Error("Failed to open connection", slog.Any("name", name), slog.Any("error", err))
+		logger.Error("Failed to open connection", slog.String("name", name), slog.Any("error", err))
 	}
 	if err := db.Ping(); err != nil {
-		slog.Error("Failed to ping database", slog.Any("name", name), slog.Any("error", err))
+		logger.Error("Failed to ping database", slog.String("name", name), slog.Any("error", err))
 		db.Close()
 		return nil, err
 	}
@@ -106,7 +107,7 @@ func (p *PSQL) historyFunction(h []zbx.History) (failed []zbx.History, err error
 
 	txn, err := p.dbConn.Begin()
 	if err != nil {
-		slog.Error("Failed to begin transaction", slog.Any("name", p.name), slog.Any("error", err))
+		logger.Error("Failed to begin transaction", slog.String("name", p.name), slog.Any("error", err))
 		p.monitor.historyValuesFailed.Add(historyLen)
 		failed = h
 		return failed, err
@@ -114,7 +115,7 @@ func (p *PSQL) historyFunction(h []zbx.History) (failed []zbx.History, err error
 	stmt, err := txn.Prepare(base)
 	if err != nil {
 		txn.Rollback()
-		slog.Error("Failed to prepare statement", slog.Any("name", p.name), slog.Any("error", err))
+		logger.Error("Failed to prepare statement", slog.String("name", p.name), slog.Any("error", err))
 		p.monitor.historyValuesFailed.Add(historyLen)
 		failed = h
 		return failed, err
@@ -128,7 +129,7 @@ func (p *PSQL) historyFunction(h []zbx.History) (failed []zbx.History, err error
 		_, err := stmt.Exec(tag, H.Value, true, stamp, stamp)
 		if err != nil {
 			txn.Rollback()
-			slog.Error("Failed to execute statement", slog.Any("name", p.name), slog.Any("error", err))
+			logger.Error("Failed to execute statement", slog.String("name", p.name), slog.Any("error", err))
 			p.monitor.historyValuesFailed.Add(historyLen)
 			failed = h
 			return failed, err
@@ -138,7 +139,7 @@ func (p *PSQL) historyFunction(h []zbx.History) (failed []zbx.History, err error
 
 	err = txn.Commit()
 	if err != nil {
-		slog.Error("Failed to commit transaction", slog.Any("name", p.name), slog.Any("error", err))
+		logger.Error("Failed to commit transaction", slog.String("name", p.name), slog.Any("error", err))
 		p.monitor.historyValuesFailed.Add(historyLen)
 		failed = h
 		return failed, err

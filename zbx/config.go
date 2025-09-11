@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"log/slog"
+
+	"szuro.net/zms/zms/logger"
 	//	"path/filepath"
 )
 
@@ -27,7 +29,7 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 	// zabbix_server.conf defaults
 	conf.DBSyncers = 4
 	conf.ExportTypes = []string{HISTORY, TREND, EVENT}
-	slog.Info("Reading config", slog.Any("path", conf.configPath))
+	logger.Info("Reading config", slog.String("path", conf.configPath))
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -55,12 +57,12 @@ func ParseZabbixConfig(path string) (conf ZabbixConf, err error) {
 		}
 	}
 
-	slog.Info(
+	logger.Info(
 		"Detected config",
-		slog.Any("NodeName", conf.NodeName),
-		slog.Any("ExportDir", conf.ExportDir),
-		slog.Any("Syncers", conf.DBSyncers),
-		slog.Any(strings.Join(conf.ExportTypes, ","), conf.ExportTypes),
+		slog.String("node", conf.NodeName),
+		slog.String("export", conf.ExportDir),
+		slog.Int("syncers", conf.DBSyncers),
+		slog.String("types", strings.Join(conf.ExportTypes, ",")),
 	)
 	syncerGauge.Set(float64(conf.DBSyncers))
 

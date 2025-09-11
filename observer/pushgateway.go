@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"szuro.net/zms/zbx"
+	"szuro.net/zms/zms/logger"
 )
 
 type PushGatewayManager struct {
@@ -21,7 +22,7 @@ type PushGatewayManager struct {
 func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error) {
 	_, err = url_parser.Parse(url)
 	if err != nil {
-		slog.Error("Failed to parse URL", slog.Any("name", name), slog.Any("error", err))
+		logger.Error("Failed to parse URL", slog.String("name", name), slog.Any("error", err))
 		return nil, err
 	}
 
@@ -59,7 +60,7 @@ func (pgm *PushGatewayManager) SaveHistory(h []zbx.History) bool {
 		pgm.monitor.historyValuesSent.Inc()
 		if err != nil {
 			pgm.monitor.historyValuesFailed.Inc()
-			slog.Error("Failed to ship values", slog.Any("name", pgm.name), slog.Any("error", err))
+			logger.Error("Failed to ship values", slog.String("name", pgm.name), slog.Any("error", err))
 		}
 		return true
 	})

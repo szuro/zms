@@ -17,6 +17,7 @@ import (
 	"github.com/nxadm/tail"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"szuro.net/zms/zms/logger"
 )
 
 func parseHistoryLine(line *tail.Line) (h History, err error) {
@@ -165,17 +166,18 @@ func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *badger.DB, chanSize 
 				ReOpen:        true,
 				CompleteLines: true,
 				Location:      loc,
+				Logger:        logger.Default(),
 			})
 
 		if err != nil {
-			slog.Error("Could not open export", slog.Any("file", filename), slog.Any("error", err))
+			logger.Error("Could not open export", slog.String("file", filename), slog.Any("error", err))
 			return
 		}
 		tailedFiles[i] = tailedFile
 
 		go func(filename string, file_index int, file_type string) {
 			parsedCounter, parsedErrorCounter := makeCounters(file_type, file_index)
-			slog.Info("Opening and parsing export file", slog.Any("file", filename))
+			logger.Info("Opening and parsing export file", slog.String("file", filename))
 
 			for line := range tailedFiles[file_index].Lines {
 				parsed, err := parseLine[T](line)
@@ -183,7 +185,7 @@ func FileReaderGenerator[T Export](zbx ZabbixConf, indexDB *badger.DB, chanSize 
 				if err != nil {
 					parsedErrorCounter.Inc()
 
-					slog.Error("Failed to parse line", slog.Any("file", filename), slog.Any("line_number", line.Num), slog.Any("error", err))
+					logger.Error("Failed to parse line", slog.String("file", filename), slog.Int("line_number", line.Num), slog.Any("error", err))
 					continue
 				}
 				c <- parsed

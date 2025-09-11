@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"szuro.net/zms/zms"
+	"szuro.net/zms/zms/logger"
 )
 
 type Inputer interface {
@@ -63,7 +64,7 @@ func (bs *baseInput) setTargets() {
 					t.InitBuffer(bs.config.WorkingDir, target.OfflineBufferTime)
 					subject.Register(t)
 				} else {
-					slog.Warn("Failed to register target", slog.Any("name", t.GetName()))
+					logger.Warn("Failed to register target", slog.String("name", t.GetName()))
 				}
 			}
 		}

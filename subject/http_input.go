@@ -13,6 +13,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
+	"szuro.net/zms/zms/logger"
 )
 
 type HTTPInput struct {
@@ -61,17 +62,17 @@ func (hi *HTTPInput) handleHistory(w http.ResponseWriter, r *http.Request) {
 	hi.handleNDJSON(w, r, func(line string) {
 		var hExport zbx.History
 		if err := json.Unmarshal([]byte(line), &hExport); err != nil {
-			slog.Error("Failed to parse history line", slog.Any("error", err))
+			logger.Error("Failed to parse history line", slog.Any("error", err))
 			return
 		}
 		subject, ok := hi.subjects[zbx.HISTORY]
 		if !ok {
-			slog.Error("No subject!")
+			logger.Error("No subject!")
 			return
 		}
 		funnel := subject.GetFunnel()
 		if funnel == nil {
-			slog.Error("No funnel for HISTORY export", slog.Any("subject", zbx.HISTORY))
+			logger.Error("No funnel for HISTORY export", slog.String("subject", zbx.HISTORY))
 			return
 		}
 		funnel <- hExport
@@ -82,17 +83,17 @@ func (hi *HTTPInput) handleEvents(w http.ResponseWriter, r *http.Request) {
 	hi.handleNDJSON(w, r, func(line string) {
 		var eExport zbx.Event
 		if err := json.Unmarshal([]byte(line), &eExport); err != nil {
-			slog.Error("Failed to parse event line", slog.Any("error", err))
+			logger.Error("Failed to parse event line", slog.Any("error", err))
 			return
 		}
 		subject, ok := hi.subjects[zbx.EVENT]
 		if !ok {
-			slog.Error("No subject!")
+			logger.Error("No subject!")
 			return
 		}
 		funnel := subject.GetFunnel()
 		if funnel == nil {
-			slog.Error("No funnel for EVENT export", slog.Any("subject", zbx.EVENT))
+			logger.Error("No funnel for EVENT export", slog.String("subject", zbx.EVENT))
 			return
 		}
 		funnel <- eExport
@@ -114,7 +115,7 @@ func (hi *HTTPInput) handleNDJSON(w http.ResponseWriter, r *http.Request, handle
 			gz, err := gzip.NewReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				slog.Error("Failed to create gzip reader", slog.Any("error", err))
+				logger.Error("Failed to create gzip reader", slog.Any("error", err))
 				return
 			}
 			defer gz.Close()
@@ -123,7 +124,7 @@ func (hi *HTTPInput) handleNDJSON(w http.ResponseWriter, r *http.Request, handle
 			zr, err := zlib.NewReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				slog.Error("Failed to create zlib/deflate reader", slog.Any("error", err))
+				logger.Error("Failed to create zlib/deflate reader", slog.Any("error", err))
 				return
 			}
 			defer zr.Close()
@@ -132,14 +133,14 @@ func (hi *HTTPInput) handleNDJSON(w http.ResponseWriter, r *http.Request, handle
 			zr, err := zstd.NewReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				slog.Error("Failed to create zstd reader", slog.Any("error", err))
+				logger.Error("Failed to create zstd reader", slog.Any("error", err))
 				return
 			}
 			defer zr.Close()
 			bodyReader = zr
 		default:
 			w.WriteHeader(http.StatusUnsupportedMediaType)
-			slog.Error("Unsupported Content-Encoding", slog.Any("encoding", ce))
+			logger.Error("Unsupported Content-Encoding", slog.String("encoding", ce))
 			return
 		}
 	}
