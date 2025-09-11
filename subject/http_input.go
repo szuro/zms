@@ -174,20 +174,25 @@ func (hi *HTTPInput) handleNDJSON(w http.ResponseWriter, r *http.Request, handle
 	}
 
 	reader := bufio.NewReader(bodyReader)
+	fin := false
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
-			break
+			fin = true
 		}
-		if err != nil {
+		if err != nil && err != io.EOF {
+			logger.Error("Error reading request body", slog.Any("error", err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		line = strings.TrimSpace(line)
-		if line == "" {
+
+		if line = strings.TrimSpace(line); line == "" {
 			continue
 		}
 		handleLine(line)
+		if fin {
+			break
+		}
 	}
 	w.WriteHeader(http.StatusOK)
 }
