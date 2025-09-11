@@ -11,9 +11,29 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/zbx"
 	"szuro.net/zms/zms"
 	"szuro.net/zms/zms/logger"
+)
+
+var (
+	ndjsonLinesReceived = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "zms_http_ndjson_lines_total",
+			Help: "Total number of NDJSON lines received per endpoint",
+		},
+		[]string{"endpoint"},
+	)
+
+	ndjsonParseErrors = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "zms_http_ndjson_parse_errors_total",
+			Help: "Total number of NDJSON parse errors per endpoint",
+		},
+		[]string{"endpoint"},
+	)
 )
 
 type HTTPInput struct {
@@ -47,6 +67,10 @@ func (hi *HTTPInput) Prepare() {
 func (hi *HTTPInput) Start() {
 	http.HandleFunc("/history", hi.handleHistory)
 	http.HandleFunc("/events", hi.handleEvents)
+	ndjsonLinesReceived.WithLabelValues(zbx.HISTORY).Add(0)
+	ndjsonLinesReceived.WithLabelValues(zbx.EVENT).Add(0)
+	ndjsonParseErrors.WithLabelValues(zbx.HISTORY).Add(0)
+	ndjsonParseErrors.WithLabelValues(zbx.EVENT).Add(0)
 	hi.baseInput.Start()
 }
 
@@ -63,8 +87,10 @@ func (hi *HTTPInput) handleHistory(w http.ResponseWriter, r *http.Request) {
 		var hExport zbx.History
 		if err := json.Unmarshal([]byte(line), &hExport); err != nil {
 			logger.Error("Failed to parse history line", slog.Any("error", err))
+			ndjsonParseErrors.WithLabelValues(zbx.HISTORY).Inc()
 			return
 		}
+		ndjsonLinesReceived.WithLabelValues(zbx.HISTORY).Inc()
 		subject, ok := hi.subjects[zbx.HISTORY]
 		if !ok {
 			logger.Error("No subject!")
@@ -84,8 +110,10 @@ func (hi *HTTPInput) handleEvents(w http.ResponseWriter, r *http.Request) {
 		var eExport zbx.Event
 		if err := json.Unmarshal([]byte(line), &eExport); err != nil {
 			logger.Error("Failed to parse event line", slog.Any("error", err))
+			ndjsonParseErrors.WithLabelValues(zbx.EVENT).Inc()
 			return
 		}
+		ndjsonLinesReceived.WithLabelValues(zbx.EVENT).Inc()
 		subject, ok := hi.subjects[zbx.EVENT]
 		if !ok {
 			logger.Error("No subject!")
