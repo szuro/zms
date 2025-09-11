@@ -50,7 +50,7 @@ type HTTPConf struct {
 func ParseZMSConfig(path string) (conf ZMSConf) {
 	file, err := os.ReadFile(path)
 	if err != nil {
-		return
+		panic("Cannot read ZMS config file!")
 	}
 
 	conf = ZMSConf{}
