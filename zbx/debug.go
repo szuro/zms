@@ -4,14 +4,14 @@ package zbx
 
 import (
 	"time"
+
 	"szuro.net/zms/zms/logger"
 )
 
-const DEFAULT_DELAY = 60
+const DEFAULT_DELAY = 60 * time.Second
 
 func GetFailoverDelay(input string) time.Duration {
-	return time.Duration(60)
-
+	return DEFAULT_DELAY
 }
 
 func ExtractNameAndStatus(input string) (string, string) {

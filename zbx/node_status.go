@@ -17,7 +17,7 @@ const (
 	HEADER_LEN    = 3
 	INITIAL_SYNC  = "Cannot perform specified runtime control command during initial configuration cache sync"
 	NON_ACTIVE    = "Runtime commands can be executed only in active mode"
-	DEFAULT_DELAY = 60
+	DEFAULT_DELAY = 60 * time.Second
 )
 
 // Returns failover delay in seconds
@@ -67,7 +67,7 @@ func GetHaStatus(config ZabbixConf) (delay time.Duration, nodeIsActive bool) {
 	if strings.TrimRight(lines[0], "\n") == NON_ACTIVE {
 		var d time.Duration = DEFAULT_DELAY
 		logger.Info("Node in non-active mode, waiting", slog.Duration("delay", d))
-		delay = time.Duration(d * time.Second)
+		delay = time.Duration(d)
 		return
 	} else {
 		delay = GetFailoverDelay(lines[0])
