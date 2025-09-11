@@ -19,14 +19,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	Version, Commit, BuildDate string
-)
-
 func printVersionInfo() {
-	fmt.Printf("ZMS %s\n", Version)
-	fmt.Printf("Git commit: %s\n", Commit)
-	fmt.Printf("Compilation time: %s\n", BuildDate)
+	fmt.Printf("ZMS %s\n", zms.Version)
+	fmt.Printf("Git commit: %s\n", zms.Commit)
+	fmt.Printf("Compilation time: %s\n", zms.BuildDate)
 }
 
 func main() {
@@ -61,6 +57,7 @@ func main() {
 	}
 
 	input.Prepare()
+	zms.ZmsInfo.Set(1)
 
 	http.Handle("/metrics", promhttp.Handler())
 
