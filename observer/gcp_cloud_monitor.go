@@ -37,7 +37,11 @@ func NewCloudMonitor(name, file string) (cm *CloudMonitor, err error) {
 		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", file)
 	}
 
-	cm = &CloudMonitor{}
+	cm = &CloudMonitor{
+		baseObserver: baseObserver{
+			observerType: "gcp_cloud_monitor",
+		},
+	}
 	cm.SetName(name)
 
 	cm.ctx = context.Background()
@@ -55,7 +59,6 @@ func NewCloudMonitor(name, file string) (cm *CloudMonitor, err error) {
 
 	cm.resource = newResource()
 	createHistoryMetric(cm.projectID)
-	cm.monitor.initObserverMetrics("gcp_cloud_monitor", name)
 
 	return
 }

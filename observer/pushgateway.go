@@ -27,10 +27,12 @@ func NewPushGatewayManager(name, url string) (pgm *PushGatewayManager, err error
 	}
 
 	pgm = &PushGatewayManager{
+		baseObserver: baseObserver{
+			name:         name,
+			observerType: "pushgateway",
+		},
 		url: url,
 	}
-	pgm.SetName(name)
-	pgm.monitor.initObserverMetrics("pushgateway", name)
 
 	return
 }

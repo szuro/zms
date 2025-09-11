@@ -36,6 +36,7 @@ func (t *Target) ToObserver() (obs observer.Observer, err error) {
 	filter := t.TagFilter
 	filter.Activate()
 	obs.SetFilter(filter)
+	obs.PrepareMetrics(t.Source)
 
 	return obs, err
 }

@@ -19,15 +19,17 @@ type Print struct {
 }
 
 func NewPrint(name, out string) (p *Print) {
-	p = &Print{}
-	p.name = name
+	p = &Print{
+		baseObserver: baseObserver{
+			name:         name,
+			observerType: "print",
+		},
+	}
 	if out == STDERR {
 		p.out = os.Stderr
 	} else {
 		p.out = os.Stdout
 	}
-
-	p.monitor.initObserverMetrics("print", name)
 
 	return
 }

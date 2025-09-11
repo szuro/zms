@@ -23,8 +23,13 @@ type PSQL struct {
 }
 
 func NewPSQL(name, connStr string, opts map[string]string) (p *PSQL, err error) {
-	p = &PSQL{}
-	p.name = name
+	observerType := "psql"
+	p = &PSQL{
+		baseObserver: baseObserver{
+			name:         name,
+			observerType: observerType,
+		},
+	}
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -54,9 +59,6 @@ func NewPSQL(name, connStr string, opts map[string]string) (p *PSQL, err error) 
 	}
 
 	p.dbConn = db
-
-	observerType := "psql"
-	p.monitor.initObserverMetrics(observerType, name)
 
 	p.idleConnections = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:        "zms_psql_connection_stats",

@@ -34,8 +34,12 @@ type AzureTable struct {
 }
 
 func NewAzureTable(name, conn string) (client *AzureTable, err error) {
-	client = &AzureTable{}
-	client.name = name
+	client = &AzureTable{
+		baseObserver: baseObserver{
+			name:         name,
+			observerType: "azure_table",
+		},
+	}
 	service, err := aztables.NewServiceClientWithNoCredential(conn, nil)
 	if err != nil {
 		return nil, err
@@ -43,7 +47,6 @@ func NewAzureTable(name, conn string) (client *AzureTable, err error) {
 	client.h = service.NewClient("history")
 	client.t = service.NewClient("trends")
 	// client.e = service.NewClient("events")
-	client.monitor.initObserverMetrics("azure_table", name)
 
 	return
 }

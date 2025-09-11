@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"log/slog"
 	"path"
+	"slices"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -24,15 +25,18 @@ type Observer interface {
 	SaveTrends(t []zbx.Trend) bool
 	SaveEvents(e []zbx.Event) bool
 	SetFilter(filter filter.Filter)
+	PrepareMetrics(exports []string)
 }
 
 type baseObserver struct {
 	name             string
+	observerType     string
 	monitor          obserwerMetrics
 	localFilter      filter.Filter
 	offlineBufferTTL time.Duration // Time to keep offline buffer for this observer
 	buffer           *badger.DB    // BadgerDB instance for offline buffering
 	workingDir       string        // Directory for storing local data
+	enabledExports   []string      // List of enabled export types for this observer
 }
 
 // GetName returns the name of the observer.
@@ -43,6 +47,11 @@ func (p *baseObserver) GetName() string {
 // SetName sets the name of the baseObserver to the provided string.
 func (p *baseObserver) SetName(name string) {
 	p.name = name
+}
+
+func (p *baseObserver) PrepareMetrics(exports []string) {
+	p.enabledExports = exports
+	p.initObserverMetrics()
 }
 
 func (p *baseObserver) InitBuffer(bufferPath string, t int64) {
@@ -235,40 +244,44 @@ type obserwerMetrics struct {
 //
 //	observerType - the type of the observer (used as a label in metrics)
 //	name         - the name of the observer (used as a label in metrics)
-func (m *obserwerMetrics) initObserverMetrics(observerType, name string) {
-	m.historyValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_operations_total",
-		Help:        "Total number of shipping operations",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "history"},
-	})
+func (p *baseObserver) initObserverMetrics() {
+	if slices.Contains(p.enabledExports, zbx.HISTORY) {
+		p.monitor.historyValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_operations_total",
+			Help:        "Total number of shipping operations",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.HISTORY},
+		})
 
-	m.historyValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_errors_total",
-		Help:        "Total number of shipping errors",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "history"},
-	})
+		p.monitor.historyValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_errors_total",
+			Help:        "Total number of shipping errors",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.HISTORY},
+		})
+	}
+	if slices.Contains(p.enabledExports, zbx.TREND) {
+		p.monitor.trendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_operations_total",
+			Help:        "Total number of shipping operations",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.TREND},
+		})
 
-	m.trendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_operations_total",
-		Help:        "Total number of shipping operations",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "trends"},
-	})
+		p.monitor.trendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_errors_total",
+			Help:        "Total number of shipping errors",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.TREND},
+		})
+	}
+	if slices.Contains(p.enabledExports, zbx.EVENT) {
+		p.monitor.eventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_operations_total",
+			Help:        "Total number of shipping operations",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.EVENT},
+		})
 
-	m.trendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_errors_total",
-		Help:        "Total number of shipping errors",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "trends"},
-	})
-
-	m.eventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_operations_total",
-		Help:        "Total number of shipping operations",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "events"},
-	})
-
-	m.eventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name:        "zms_shipping_errors_total",
-		Help:        "Total number of shipping errors",
-		ConstLabels: prometheus.Labels{"target_name": name, "target_type": observerType, "export_type": "events"},
-	})
+		p.monitor.eventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "zms_shipping_errors_total",
+			Help:        "Total number of shipping errors",
+			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbx.EVENT},
+		})
+	}
 }
