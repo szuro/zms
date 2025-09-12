@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}\\main.go",
+            "program": "${workspaceFolder}/cmd/zmsd/main.go",
             "args": ["-c", "zmsd-test.yaml"],
             "buildFlags": ["-tags", "debug"],
         }
