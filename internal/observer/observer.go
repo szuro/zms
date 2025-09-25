@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/gob"
 	"log/slog"
-	"path"
 	"slices"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/filter"
 	"szuro.net/zms/internal/logger"
+	zmsplugin "szuro.net/zms/pkg/plugin"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 type Observer interface {
@@ -34,45 +34,36 @@ type baseObserver struct {
 	monitor          obserwerMetrics
 	localFilter      filter.Filter
 	offlineBufferTTL time.Duration // Time to keep offline buffer for this observer
-	buffer           *badger.DB    // BadgerDB instance for offline buffering
-	workingDir       string        // Directory for storing local data
-	enabledExports   []string      // List of enabled export types for this observer
+	buffer           zmsplugin.ZMSBuffer
+	enabledExports   []string // List of enabled export types for this observer
 }
 
 // GetName returns the name of the observer.
-func (p *baseObserver) GetName() string {
-	return p.name
+func (bo *baseObserver) GetName() string {
+	return bo.name
 }
 
 // SetName sets the name of the baseObserver to the provided string.
-func (p *baseObserver) SetName(name string) {
-	p.name = name
+func (bo *baseObserver) SetName(name string) {
+	bo.name = name
 }
 
-func (p *baseObserver) PrepareMetrics(exports []string) {
-	p.enabledExports = exports
-	p.initObserverMetrics()
+func (bo *baseObserver) PrepareMetrics(exports []string) {
+	bo.enabledExports = exports
+	bo.initObserverMetrics()
 }
 
-func (p *baseObserver) InitBuffer(bufferPath string, t int64) {
-	p.offlineBufferTTL = time.Duration(t) * time.Hour
-	if p.offlineBufferTTL > 0 {
-		db, err := badger.Open(badger.DefaultOptions(
-			path.Join(bufferPath, p.name+".db"),
-		).WithLogger(logger.Default()))
-		logger.Debug("Initialized BadgerDB for offline buffering", slog.String("path", path.Join(bufferPath, p.name+".db")))
-		if err != nil {
-			logger.Error("Failed to open BadgerDB for offline buffering", slog.Any("error", err))
-		}
-		p.buffer = db
-	}
+func (bo *baseObserver) InitBuffer(bufferPath string, t int64) {
+	bo.buffer = zmsplugin.ZMSDefaultBuffer{}
+	bo.buffer.InitBuffer(bufferPath, t)
+
 }
 
 // Cleanup releases resources held by the baseObserver.
 // If offlineBufferTTL is greater than zero, it closes the buffer to free associated resources.
-func (p *baseObserver) Cleanup() {
-	if p.offlineBufferTTL > 0 {
-		p.buffer.Close()
+func (bo *baseObserver) Cleanup() {
+	if bo.offlineBufferTTL > 0 {
+		bo.buffer.Cleanup()
 	}
 }
 
@@ -201,14 +192,14 @@ func genericSave[T zbxpkg.Export](
 // SaveHistory saves a slice of zbx.History records to the observer's buffer, applying local filtering and serialization.
 // It uses a generic saving function with custom filtering, key generation, and serialization/deserialization logic.
 // Returns true if the save operation was successful.
-func (p *baseObserver) SaveHistory(h []zbxpkg.History) bool {
+func (bo *baseObserver) SaveHistory(h []zbxpkg.History) bool {
 	panic("SaveHistory is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
 // SaveTrends processes and saves a slice of zbx.Trend objects using a generic saving function.
 // It applies a local filter to each trend's tags, serializes trends for storage, and manages buffering
 // with offline TTL support. Returns true if the save operation succeeds.
-func (p *baseObserver) SaveTrends(t []zbxpkg.Trend) bool {
+func (bo *baseObserver) SaveTrends(t []zbxpkg.Trend) bool {
 	panic("SaveTrends is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
@@ -216,14 +207,14 @@ func (p *baseObserver) SaveTrends(t []zbxpkg.Trend) bool {
 // It applies a local filter to each event's tags, executes a custom event function, and manages buffering
 // with offline TTL support. Events are serialized to and from byte slices for storage.
 // Returns true if the events were successfully saved.
-func (p *baseObserver) SaveEvents(e []zbxpkg.Event) bool {
+func (bo *baseObserver) SaveEvents(e []zbxpkg.Event) bool {
 	panic("SaveEvents is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
 // SetFilter sets the local filter for the observer.
 // The provided filter will be used to determine which events are processed by this observer.
-func (p *baseObserver) SetFilter(filter filter.Filter) {
-	p.localFilter = filter
+func (bo *baseObserver) SetFilter(filter filter.Filter) {
+	bo.localFilter = filter
 }
 
 type obserwerMetrics struct {
@@ -244,44 +235,44 @@ type obserwerMetrics struct {
 //
 //	observerType - the type of the observer (used as a label in metrics)
 //	name         - the name of the observer (used as a label in metrics)
-func (p *baseObserver) initObserverMetrics() {
-	if slices.Contains(p.enabledExports, zbxpkg.HISTORY) {
-		p.monitor.historyValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+func (bo *baseObserver) initObserverMetrics() {
+	if slices.Contains(bo.enabledExports, zbxpkg.HISTORY) {
+		bo.monitor.historyValuesSent = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_operations_total",
 			Help:        "Total number of shipping operations",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.HISTORY},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.HISTORY},
 		})
 
-		p.monitor.historyValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+		bo.monitor.historyValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_errors_total",
 			Help:        "Total number of shipping errors",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.HISTORY},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.HISTORY},
 		})
 	}
-	if slices.Contains(p.enabledExports, zbxpkg.TREND) {
-		p.monitor.trendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+	if slices.Contains(bo.enabledExports, zbxpkg.TREND) {
+		bo.monitor.trendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_operations_total",
 			Help:        "Total number of shipping operations",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.TREND},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.TREND},
 		})
 
-		p.monitor.trendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+		bo.monitor.trendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_errors_total",
 			Help:        "Total number of shipping errors",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.TREND},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.TREND},
 		})
 	}
-	if slices.Contains(p.enabledExports, zbxpkg.EVENT) {
-		p.monitor.eventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
+	if slices.Contains(bo.enabledExports, zbxpkg.EVENT) {
+		bo.monitor.eventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_operations_total",
 			Help:        "Total number of shipping operations",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.EVENT},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.EVENT},
 		})
 
-		p.monitor.eventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
+		bo.monitor.eventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
 			Name:        "zms_shipping_errors_total",
 			Help:        "Total number of shipping errors",
-			ConstLabels: prometheus.Labels{"target_name": p.name, "target_type": p.observerType, "export_type": zbxpkg.EVENT},
+			ConstLabels: prometheus.Labels{"target_name": bo.name, "target_type": bo.observerType, "export_type": zbxpkg.EVENT},
 		})
 	}
 }
