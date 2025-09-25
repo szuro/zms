@@ -47,7 +47,7 @@ func (p *Print) SaveHistory(h []zbxpkg.History) bool {
 func (p *Print) historyFunction(h []zbxpkg.History) (failed []zbxpkg.History, err error) {
 	failed = make([]zbxpkg.History, 0, len(h))
 	for _, H := range h {
-		msg := fmt.Sprintf("Host: %s; Item: %s; Time: %d; Value: %s", H.Host.Host, H.Name, H.Clock, H.Value)
+		msg := fmt.Sprintf("Host: %s; Item: %s; Time: %d; Value: %v", H.Host.Host, H.Name, H.Clock, H.Value)
 		_, err := fmt.Fprintln(p.out, msg)
 		if err != nil {
 			p.monitor.historyValuesFailed.Inc()
