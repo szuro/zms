@@ -64,7 +64,7 @@ func (bs *baseInput) setTargets() {
 					t.InitBuffer(bs.config.WorkingDir, target.OfflineBufferTime)
 					subject.Register(t)
 				} else {
-					logger.Warn("Failed to register target", slog.String("name", t.GetName()))
+					logger.Warn("Failed to register target", slog.String("name", target.Name))
 				}
 			}
 		}
