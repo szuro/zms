@@ -20,6 +20,7 @@ type ZMSConf struct {
 	WorkingDir   string        `yaml:"working_dir"`
 	Http         HTTPConf      `yaml:"http"`
 	LogLevel     string        `yaml:"log_level"`
+	PluginsDir   string        `yaml:"plugins_dir"`   // Directory containing plugin .so files
 	slogLevel    slog.Level    `yaml:"omitempty"`
 }
 

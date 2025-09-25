@@ -13,6 +13,7 @@ import (
 	"szuro.net/zms/internal/zbx"
 	"szuro.net/zms/internal/config"
 	"szuro.net/zms/internal/logger"
+	"szuro.net/zms/internal/plugin"
 
 	"net/http"
 
@@ -38,6 +39,24 @@ func main() {
 
 	zmsConfig := config.ParseZMSConfig(*zmsPath)
 	logger.SetLogLevel(zmsConfig.GetLogLevel())
+
+	// Load plugins if plugin directory is configured
+	if zmsConfig.PluginsDir != "" {
+		logger.Info("Loading plugins", slog.String("dir", zmsConfig.PluginsDir))
+		if err := plugin.GetRegistry().LoadPluginsFromDir(zmsConfig.PluginsDir); err != nil {
+			logger.Error("Failed to load plugins", slog.Any("error", err))
+			// Continue execution - plugins are optional
+		}
+		
+		// List loaded plugins
+		plugins := plugin.GetRegistry().ListPlugins()
+		for _, p := range plugins {
+			logger.Info("Loaded plugin", 
+				slog.String("name", p.Name),
+				slog.String("version", p.Version),
+				slog.String("type", p.Type))
+		}
+	}
 
 	var inp input.Inputer
 
