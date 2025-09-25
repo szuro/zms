@@ -8,8 +8,8 @@ import (
 	"log/slog"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/logger"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 type HistoryEntity struct {
@@ -56,8 +56,8 @@ func (az *AzureTable) SaveHistory(h []zbxpkg.History) bool {
 		h,
 		func(H zbxpkg.History) bool { return az.localFilter.EvaluateFilter(H.Tags) },
 		az.historyFunction,
-		az.buffer,
-		az.offlineBufferTTL,
+		nil,
+		0,
 	)
 }
 
@@ -95,8 +95,8 @@ func (az *AzureTable) SaveTrends(t []zbxpkg.Trend) bool {
 		t,
 		func(T zbxpkg.Trend) bool { return az.localFilter.EvaluateFilter(T.Tags) },
 		az.trendFunction,
-		az.buffer,
-		az.offlineBufferTTL,
+		nil,
+		0,
 	)
 }
 

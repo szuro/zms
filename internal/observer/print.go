@@ -39,8 +39,8 @@ func (p *Print) SaveHistory(h []zbxpkg.History) bool {
 		h,
 		func(H zbxpkg.History) bool { return p.localFilter.EvaluateFilter(H.Tags) },
 		p.historyFunction,
-		p.buffer,
-		p.offlineBufferTTL,
+		nil,
+		0,
 	)
 }
 
@@ -63,8 +63,8 @@ func (p *Print) SaveTrends(t []zbxpkg.Trend) bool {
 		t,
 		func(T zbxpkg.Trend) bool { return p.localFilter.EvaluateFilter(T.Tags) },
 		p.trendFunction,
-		p.buffer,
-		p.offlineBufferTTL,
+		nil,
+		0,
 	)
 }
 

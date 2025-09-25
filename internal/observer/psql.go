@@ -10,8 +10,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/logger"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 type PSQL struct {
@@ -95,8 +95,8 @@ func (p *PSQL) SaveHistory(h []zbxpkg.History) bool {
 		h,
 		func(H zbxpkg.History) bool { return p.localFilter.EvaluateFilter(H.Tags) },
 		p.historyFunction,
-		p.buffer,
-		p.offlineBufferTTL,
+		nil,
+		0,
 	)
 }
 
