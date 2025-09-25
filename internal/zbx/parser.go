@@ -17,8 +17,8 @@ import (
 	"github.com/nxadm/tail"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/logger"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 func parseHistoryLine(line *tail.Line) (h zbxpkg.History, err error) {
@@ -124,10 +124,10 @@ func generateFilePaths[T zbxpkg.Export](zbx ZabbixConf) (paths []string) {
 			filename = getMainFilePath[T]()
 		} else {
 			filenamePattern := getBasePath[T]()
-			filename = filepath.Join(zbx.ExportDir, fmt.Sprintf(filenamePattern, i))
+			filename = fmt.Sprintf(filenamePattern, i)
 		}
 
-		paths = append(paths, filename)
+		paths = append(paths, filepath.Join(zbx.ExportDir, filename))
 	}
 	return
 }
