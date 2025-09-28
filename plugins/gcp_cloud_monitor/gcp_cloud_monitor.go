@@ -1,4 +1,4 @@
-package observer
+package main
 
 import (
 	"context"
@@ -18,49 +18,56 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"google.golang.org/api/option"
+	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 const HISTORY_TYPE string = "custom.googleapis.com/zabbix_export/history"
 const TREND_TYPE string = "custom.googleapis.com/zabbix_export/trend"
 
+// Plugin metadata - REQUIRED
+var PluginInfo = plugin.PluginInfo{
+	Name:        "gcp_cloud_monitor",
+	Version:     "1.0.0",
+	Description: "Google Cloud Monitoring observer plugin",
+	Author:      "ZMS",
+}
+
 type CloudMonitor struct {
-	baseObserver
+	plugin.BaseObserverImpl
 	client    *monitoring.MetricClient
 	ctx       context.Context
 	resource  *monitoredres.MonitoredResource
 	projectID string
 }
 
-func NewCloudMonitor(name, file string) (cm *CloudMonitor, err error) {
-	if file != "" {
-		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", file)
-	}
+// Factory function - REQUIRED
+func NewObserver() plugin.Observer {
+	return &CloudMonitor{}
+}
 
-	cm = &CloudMonitor{
-		baseObserver: baseObserver{
-			observerType: "gcp_cloud_monitor",
-		},
+func (cm *CloudMonitor) Initialize(connection string, options map[string]string) error {
+	if credFile := options["credentials_file"]; credFile != "" {
+		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", credFile)
 	}
-	cm.SetName(name)
 
 	cm.ctx = context.Background()
 	creds, err := google.FindDefaultCredentials(cm.ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cm.projectID = "projects/" + creds.ProjectID
 	cm.client, err = monitoring.NewMetricClient(cm.ctx, option.WithCredentialsJSON(creds.JSON))
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cm.resource = newResource()
 	createHistoryMetric(cm.projectID)
 
-	return
+	return nil
 }
 
 func (cm *CloudMonitor) sentHistory(metrics map[int]*monitoringpb.TimeSeries) {
@@ -69,7 +76,6 @@ func (cm *CloudMonitor) sentHistory(metrics map[int]*monitoringpb.TimeSeries) {
 		ts = append(ts, value)
 	}
 	l := float64(len(ts))
-	cm.monitor.historyValuesSent.Add(l)
 
 	req := &monitoringpb.CreateTimeSeriesRequest{
 		Name:       cm.projectID,
@@ -82,11 +88,14 @@ func (cm *CloudMonitor) sentHistory(metrics map[int]*monitoringpb.TimeSeries) {
 		if len(details.Unknown) > 0 {
 			summary := details.Unknown[0].(*monitoringpb.CreateTimeSeriesSummary)
 			fails := summary.TotalPointCount - summary.SuccessPointCount
-			cm.monitor.historyValuesFailed.Add(float64(fails))
+			cm.Monitor.HistoryValuesFailed.Add(float64(fails))
+			cm.Monitor.HistoryValuesSent.Add(l - float64(fails))
 		}
-	} else {
+	} else if err != nil {
 		//assuming all is lost
-		cm.monitor.historyValuesFailed.Add(l)
+		cm.Monitor.HistoryValuesFailed.Add(l)
+	} else {
+		cm.Monitor.HistoryValuesSent.Add(l)
 	}
 }
 
@@ -94,10 +103,10 @@ func (cm *CloudMonitor) SaveHistory(h []zbxpkg.History) bool {
 	metrics := make(map[int]*monitoringpb.TimeSeries, 0)
 
 	for _, hist := range h {
-		if !cm.localFilter.EvaluateFilter(hist.Tags) {
+		if !cm.EvaluateFilter(hist.Tags) {
 			continue
 		}
-		if !hist.IsNumeric() {
+		if hist.Type != zbxpkg.FLOAT && hist.Type != zbxpkg.UNSIGNED {
 			continue
 		}
 

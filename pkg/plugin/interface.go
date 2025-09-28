@@ -20,7 +20,6 @@ type Observer interface {
 
 	// Plugin-specific initialization
 	Initialize(connection string, options map[string]string) error
-	GetType() string
 }
 
 // BaseObserver provides access to baseObserver functionality for plugins
@@ -42,7 +41,6 @@ type PluginFactory func() Observer
 type PluginInfo struct {
 	Name        string
 	Version     string
-	Type        string
 	Description string
 	Author      string
 }

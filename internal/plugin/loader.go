@@ -65,7 +65,6 @@ func (pr *PluginRegistry) LoadPlugin(pluginPath string) error {
 	if info.Name == "" {
 		base := filepath.Base(pluginPath)
 		info.Name = strings.TrimSuffix(base, filepath.Ext(base))
-		info.Type = "plugin"
 		info.Version = "unknown"
 	}
 
@@ -80,13 +79,12 @@ func (pr *PluginRegistry) LoadPlugin(pluginPath string) error {
 
 	logger.Info("Successfully loaded plugin",
 		slog.String("name", info.Name),
-		slog.String("version", info.Version),
-		slog.String("type", info.Type))
+		slog.String("version", info.Version))
 
 	promauto.NewGauge(prometheus.GaugeOpts{
 		Name:        "zms_plugin_info",
 		Help:        "Information about loaded plugins",
-		ConstLabels: prometheus.Labels{"plugin_name": info.Name, "plugin_type": info.Type, "plugin_version": info.Version},
+		ConstLabels: prometheus.Labels{"plugin_name": info.Name, "plugin_version": info.Version},
 	}).Set(1)
 
 	return nil

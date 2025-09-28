@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"szuro.net/zms/internal/input"
-	"szuro.net/zms/internal/zbx"
 	"szuro.net/zms/internal/config"
+	"szuro.net/zms/internal/input"
 	"szuro.net/zms/internal/logger"
 	"szuro.net/zms/internal/plugin"
+	"szuro.net/zms/internal/zbx"
 
 	"net/http"
 
@@ -47,14 +47,13 @@ func main() {
 			logger.Error("Failed to load plugins", slog.Any("error", err))
 			// Continue execution - plugins are optional
 		}
-		
+
 		// List loaded plugins
 		plugins := plugin.GetRegistry().ListPlugins()
 		for _, p := range plugins {
-			logger.Info("Loaded plugin", 
+			logger.Info("Loaded plugin",
 				slog.String("name", p.Name),
-				slog.String("version", p.Version),
-				slog.String("type", p.Type))
+				slog.String("version", p.Version))
 		}
 	}
 

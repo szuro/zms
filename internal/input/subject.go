@@ -3,15 +3,15 @@ package input
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/observer"
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/filter"
+	plug "szuro.net/zms/pkg/plugin"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 type Subjecter interface {
 	AcceptValues()
-	Register(observer observer.Observer)
-	Deregister(observer observer.Observer)
+	Register(observer plug.Observer)
+	Deregister(observer plug.Observer)
 	NotifyAll()
 	SetFilter(filter filter.Filter)
 	Cleanup()
@@ -19,7 +19,7 @@ type Subjecter interface {
 	GetFunnel() chan any
 }
 
-type ObserverRegistry map[string]observer.Observer
+type ObserverRegistry map[string]plug.Observer
 
 type Subject[T zbxpkg.Export] struct {
 	observers        ObserverRegistry
@@ -58,11 +58,11 @@ func NewSubject[t zbxpkg.Export]() (s Subject[t]) {
 	return s
 }
 
-func (bs *Subject[T]) Register(observer observer.Observer) {
+func (bs *Subject[T]) Register(observer plug.Observer) {
 	bs.observers[observer.GetName()] = observer
 }
 
-func (bs *Subject[T]) Deregister(observer observer.Observer) {
+func (bs *Subject[T]) Deregister(observer plug.Observer) {
 	delete(bs.observers, observer.GetName())
 }
 

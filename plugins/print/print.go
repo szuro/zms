@@ -19,7 +19,6 @@ const (
 var PluginInfo = plugin.PluginInfo{
 	Name:        PLUGIN_NAME,
 	Version:     "1.0.0",
-	Type:        "print",
 	Description: "Writes Zabbix exports to stdout/stderr",
 	Author:      "ZMS Example",
 }
@@ -30,7 +29,9 @@ type Print struct {
 }
 
 func NewObserver() plugin.Observer {
-	return &Print{}
+	return &Print{
+		// BaseObserverImpl: *plugin.NewBaseObserver("", PLUGIN_NAME),
+	}
 }
 
 func (p *Print) Initialize(connection string, options map[string]string) error {
@@ -41,10 +42,6 @@ func (p *Print) Initialize(connection string, options map[string]string) error {
 		p.out = os.Stdout
 	}
 	return nil
-}
-
-func (p *Print) GetType() string {
-	return PLUGIN_NAME
 }
 
 func (p *Print) SaveHistory(h []zbxpkg.History) bool {
