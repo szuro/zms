@@ -12,26 +12,83 @@ import (
 	"szuro.net/zms/pkg/zbx"
 )
 
+// ZMSBuffer defines the interface for offline data buffering.
+// This interface provides persistent storage for Zabbix export data when the target
+// destination is temporarily unavailable, ensuring data reliability and delivery guarantees.
+//
+// The buffer uses BadgerDB for local persistence and supports TTL-based expiration
+// to prevent unbounded storage growth. Data is serialized using gob encoding.
 type ZMSBuffer interface {
+	// History buffer operations
+
+	// BufferHistory stores history records in the offline buffer.
+	// Used when the target destination is unavailable.
 	BufferHistory(history []zbx.History) (err error)
+
+	// FetchHistory retrieves a specified number of history records from the buffer.
+	// Returns up to 'number' records, or fewer if not enough are available.
 	FetchHistory(number int) (history []zbx.History, err error)
+
+	// DeleteHistory removes the specified history records from the buffer.
+	// Used to clean up successfully processed records.
 	DeleteHistory(history []zbx.History) (err error)
+
+	// Trends buffer operations
+
+	// BufferTrends stores trend records in the offline buffer.
+	// Used when the target destination is unavailable.
 	BufferTrends(trends []zbx.Trend) (err error)
+
+	// FetchTrends retrieves a specified number of trend records from the buffer.
+	// Returns up to 'number' records, or fewer if not enough are available.
 	FetchTrends(number int) (trends []zbx.Trend, err error)
+
+	// DeleteTrends removes the specified trend records from the buffer.
+	// Used to clean up successfully processed records.
 	DeleteTrends(trends []zbx.Trend) (err error)
+
+	// Events buffer operations
+
+	// BufferEvents stores event records in the offline buffer.
+	// Used when the target destination is unavailable.
 	BufferEvents(events []zbx.Event) (err error)
+
+	// FetchEvents retrieves a specified number of event records from the buffer.
+	// Returns up to 'number' records, or fewer if not enough are available.
 	FetchEvents(number int) (events []zbx.Event, err error)
+
+	// DeleteEvents removes the specified event records from the buffer.
+	// Used to clean up successfully processed records.
 	DeleteEvents(events []zbx.Event) (err error)
+
+	// Buffer management
+
+	// InitBuffer initializes the buffer with the specified path and TTL.
+	// bufferPath: directory where buffer data will be stored
+	// t: time-to-live in hours for buffered records
 	InitBuffer(bufferPath string, t int64)
+
+	// Cleanup releases buffer resources and closes the database connection.
 	Cleanup()
 }
 
+// ZMSDefaultBuffer is the default implementation of ZMSBuffer using BadgerDB.
+// It provides persistent, transactional storage with configurable TTL for automatic cleanup.
+// Data is stored using gob encoding and indexed by hash keys generated from export records.
 type ZMSDefaultBuffer struct {
+	// offlineBufferTTL defines how long records are kept in the buffer before expiration
 	offlineBufferTTL time.Duration
-	bufferPath       string
-	buffer           *badger.DB
+
+	// bufferPath is the directory path where BadgerDB files are stored
+	bufferPath string
+
+	// buffer is the BadgerDB instance used for persistent storage
+	buffer *badger.DB
 }
 
+// InitBuffer initializes the BadgerDB buffer with the specified path and TTL.
+// If TTL is 0, buffering is disabled. Otherwise, a BadgerDB instance is created
+// at the specified path with automatic TTL-based cleanup.
 func (b ZMSDefaultBuffer) InitBuffer(bufferPath string, ttl int64) {
 	b.offlineBufferTTL = time.Duration(ttl) * time.Hour
 	if b.offlineBufferTTL > 0 {

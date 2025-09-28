@@ -10,28 +10,63 @@ import (
 	"szuro.net/zms/pkg/zbx"
 )
 
-// BaseObserverImpl provides the concrete implementation of BaseObserver
-// This gives plugins access to baseObserver functionality
+// BaseObserverImpl provides the concrete implementation of BaseObserver.
+// This struct should be embedded in plugin implementations to provide access
+// to core ZMS functionality including filtering, metrics, and buffering.
+//
+// Plugins can access the public Monitor field to update metrics, and use
+// methods like EvaluateFilter to apply configured filters.
 type BaseObserverImpl struct {
-	name           string
-	plugin         string
-	Monitor        observerMetrics
-	localFilter    filter.Filter
-	buffer         ZMSBuffer
+	// name is the configured name of this observer instance
+	name string
+
+	// plugin is the plugin type unique identifier
+	plugin string
+
+	// Monitor provides access to Prometheus metrics for tracking operations.
+	// Plugins should use these counters to report success/failure statistics.
+	Monitor observerMetrics
+
+	// localFilter handles tag-based filtering for this observer
+	localFilter filter.Filter
+
+	// buffer provides offline data storage capability
+	buffer ZMSBuffer
+
+	// enabledExports tracks which export types this observer handles
 	enabledExports []string
 }
 
-// observerMetrics holds the Prometheus metrics for an observer
+// observerMetrics holds the Prometheus metrics for an observer.
+// These counters track the number of successful and failed operations
+// for each export type, providing observability into plugin performance.
 type observerMetrics struct {
-	HistoryValuesSent   prometheus.Counter
+	// HistoryValuesSent tracks successful history record processing
+	HistoryValuesSent prometheus.Counter
+
+	// HistoryValuesFailed tracks failed history record processing
 	HistoryValuesFailed prometheus.Counter
-	TrendsValuesSent    prometheus.Counter
-	TrendsValuesFailed  prometheus.Counter
-	EventsValuesSent    prometheus.Counter
-	EventsValuesFailed  prometheus.Counter
+
+	// TrendsValuesSent tracks successful trend record processing
+	TrendsValuesSent prometheus.Counter
+
+	// TrendsValuesFailed tracks failed trend record processing
+	TrendsValuesFailed prometheus.Counter
+
+	// EventsValuesSent tracks successful event record processing
+	EventsValuesSent prometheus.Counter
+
+	// EventsValuesFailed tracks failed event record processing
+	EventsValuesFailed prometheus.Counter
 }
 
-// NewBaseObserver creates a new BaseObserver instance
+// NewBaseObserver creates a new BaseObserver instance.
+// This function is typically not needed by plugins since they should embed
+// BaseObserverImpl directly in their struct.
+//
+// Parameters:
+//   - name: the configured name for this observer instance
+//   - plugin: the plugin type identifier
 func NewBaseObserver(name, plugin string) *BaseObserverImpl {
 	return &BaseObserverImpl{
 		name:   name,
@@ -39,69 +74,86 @@ func NewBaseObserver(name, plugin string) *BaseObserverImpl {
 	}
 }
 
-// GetName returns the observer name
+// GetName returns the configured name of this observer instance.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) GetName() string {
 	return b.name
 }
 
-// SetName sets the observer name
+// SetName sets the name of this observer instance.
+// This is called by ZMS to assign the configured target name.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) SetName(name string) {
 	b.name = name
 }
 
-// InitBuffer initializes the offline buffer
+// InitBuffer initializes the offline buffer for this observer.
+// The buffer is used to store data when the target is unavailable,
+// providing reliability through temporary persistence.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) InitBuffer(bufferPath string, ttl int64) {
 	b.buffer = ZMSDefaultBuffer{}
 	b.buffer.InitBuffer(bufferPath, ttl)
 }
 
-// SetFilter sets the local filter
+// SetFilter configures the tag filter for this observer.
+// The filter is used to determine which data should be processed
+// by this observer based on tag matching rules.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) SetFilter(filter filter.Filter) {
 	b.localFilter = filter
 }
 
-// PrepareMetrics initializes Prometheus metrics
+// PrepareMetrics initializes Prometheus metrics for the specified export types.
+// This sets up the metrics counters that plugins can use to track their operations.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) PrepareMetrics(exports []string) {
 	b.enabledExports = exports
 	b.initObserverMetrics()
 }
 
-// Cleanup releases resources
+// Cleanup releases resources held by the base observer.
+// This includes closing the offline buffer and cleaning up any other resources.
+// Plugins should call this method in their own Cleanup implementation.
+// Implements the BaseObserver interface.
 func (b *BaseObserverImpl) Cleanup() {
-	b.buffer.Cleanup()
+	if b.buffer != nil {
+		b.buffer.Cleanup()
+	}
 }
 
-// EvaluateFilter checks if data passes the local filter
+// EvaluateFilter checks if the given tags pass the configured filter.
+// Plugins should use this method to apply filtering before processing data.
+// Returns true if the data should be processed, false if it should be filtered out.
 func (b *BaseObserverImpl) EvaluateFilter(tags []zbx.Tag) bool {
 	return b.localFilter.EvaluateFilter(tags)
 }
 
+// SaveHistory is not implemented in BaseObserverImpl.
+// Plugins must implement this method to process history data.
+// This method will panic if called, forcing plugins to provide their own implementation.
 func (b *BaseObserverImpl) SaveHistory(h []zbx.History) bool {
 	panic("SaveHistory is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
-// SaveTrends processes and saves a slice of zbx.Trend objects using a generic saving function.
-// It applies a local filter to each trend's tags, serializes trends for storage, and manages buffering
-// with offline TTL support. Returns true if the save operation succeeds.
+// SaveTrends is not implemented in BaseObserverImpl.
+// Plugins must implement this method to process trend data.
+// This method will panic if called, forcing plugins to provide their own implementation.
 func (b *BaseObserverImpl) SaveTrends(t []zbx.Trend) bool {
 	panic("SaveTrends is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
-// SaveEvents processes and saves a slice of zbx.Event objects using a generic saving function.
-// It applies a local filter to each event's tags, executes a custom event function, and manages buffering
-// with offline TTL support. Events are serialized to and from byte slices for storage.
-// Returns true if the events were successfully saved.
+// SaveEvents is not implemented in BaseObserverImpl.
+// Plugins must implement this method to process event data.
+// This method will panic if called, forcing plugins to provide their own implementation.
 func (b *BaseObserverImpl) SaveEvents(e []zbx.Event) bool {
 	panic("SaveEvents is not implemented in baseObserver, please implement it in the derived observer type")
 }
 
-// // GetMetrics returns the observer metrics for external access
-// func (b *BaseObserverImpl) GetMetrics() (exportsSent, exportsFailed prometheus.Counter) {
-// 	return b.monitor.exportsSent, b.monitor.exportsFailed
-// }
-
-// Private implementation methods
-
+// initObserverMetrics initializes the Prometheus metrics for this observer.
+// This method is called automatically by PrepareMetrics and sets up counters
+// for tracking successful and failed operations for each enabled export type.
+// The metrics include labels for target_name, plugin_name, and export_type.
 func (b *BaseObserverImpl) initObserverMetrics() {
 	if slices.Contains(b.enabledExports, zbx.HISTORY) {
 		b.Monitor.HistoryValuesSent = promauto.NewCounter(prometheus.CounterOpts{
