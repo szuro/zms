@@ -94,9 +94,14 @@ type Observer interface {
 
 	// Configuration and setup methods
 
+	// PrepareFilter creates a filter instance from raw configuration data.
+	// rawFilter: raw filter configuration (typically from YAML parsing)
+	// Returns a Filter instance that can be used to determine data processing eligibility.
+	PrepareFilter(rawFilter any) filter.Filter
+
 	// SetFilter configures the tag filter for this observer.
 	// Used to filter which data should be processed by this observer.
-	SetFilter(filter any)
+	SetFilter(filter filter.Filter)
 
 	// PrepareMetrics initializes Prometheus metrics for the specified export types.
 	// exports: list of export types this observer will handle ("history", "trends", "events")
@@ -110,35 +115,6 @@ type Observer interface {
 	// options: key-value pairs of plugin-specific configuration options
 	// Returns error if initialization fails.
 	Initialize(connection string, options map[string]string) error
-}
-
-// BaseObserver provides access to core ZMS functionality for plugins.
-// This interface is implemented by BaseObserverImpl and provides plugins
-// with common functionality like filtering, metrics, and buffering without
-// requiring them to implement these features from scratch.
-//
-// Plugins should embed BaseObserverImpl in their struct to automatically
-// get an implementation of this interface.
-type BaseObserver interface {
-	// GetName returns the configured name of this observer instance.
-	GetName() string
-
-	// SetName sets the name of this observer instance.
-	SetName(name string)
-
-	// InitBuffer initializes the offline buffer for this observer.
-	// path: directory path for buffer storage
-	// ttl: time-to-live in hours for buffered data
-	InitBuffer(path string, ttl int64)
-
-	// SetFilter configures the tag filter for this observer.
-	SetFilter(filter filter.Filter)
-
-	// PrepareMetrics initializes Prometheus metrics for the specified export types.
-	PrepareMetrics(exports []string)
-
-	// Cleanup releases resources held by the base observer.
-	Cleanup()
 }
 
 // PluginFactory is the function signature that plugins must export as "NewObserver".

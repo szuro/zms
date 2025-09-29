@@ -13,7 +13,7 @@ type Subjecter interface {
 	Register(observer plug.Observer)
 	Deregister(observer plug.Observer)
 	NotifyAll()
-	SetFilter(filter any)
+	SetFilter(filter filter.Filter)
 	Cleanup()
 	SetBuffer(size int)
 	GetFunnel() chan any
@@ -110,12 +110,8 @@ func (bs *Subject[T]) AcceptValues() {
 	}
 }
 
-func (bs *Subject[T]) SetFilter(rawFilter any) {
-	if rawFilter != nil {
-		bs.globalFilter = filter.NewDefaultFilter(rawFilter.(map[string]any))
-	} else {
-		bs.globalFilter = &filter.DefaultFilter{}
-	}
+func (bs *Subject[T]) SetFilter(filter filter.Filter) {
+	bs.globalFilter = filter
 }
 
 func (bs *Subject[T]) Cleanup() {

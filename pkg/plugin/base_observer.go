@@ -96,16 +96,25 @@ func (b *BaseObserverImpl) InitBuffer(bufferPath string, ttl int64) {
 	b.buffer.InitBuffer(bufferPath, ttl)
 }
 
+// PrepareFilter creates a filter instance from raw configuration data.
+// The filter is used to determine which data should be processed based on tag matching rules.
+// Returns a DefaultFilter with empty rules if rawFilter is nil, otherwise parses the
+// configuration map to extract accepted and rejected tag patterns.
+// Implements the BaseObserver interface.
+func (b *BaseObserverImpl) PrepareFilter(rawFilter any) filter.Filter {
+	f := &filter.DefaultFilter{}
+	if rawFilter != nil {
+		f = filter.NewDefaultFilter(rawFilter.(map[string]any))
+	}
+	return f
+}
+
 // SetFilter configures the tag filter for this observer.
 // The filter is used to determine which data should be processed
 // by this observer based on tag matching rules.
 // Implements the BaseObserver interface.
-func (b *BaseObserverImpl) SetFilter(rawFilter any) {
-	if rawFilter != nil {
-		b.Filter = filter.NewDefaultFilter(rawFilter.(map[string]any))
-	} else {
-		b.Filter = &filter.DefaultFilter{}
-	}
+func (b *BaseObserverImpl) SetFilter(filter filter.Filter) {
+	b.Filter = filter
 }
 
 // PrepareMetrics initializes Prometheus metrics for the specified export types.

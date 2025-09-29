@@ -17,7 +17,7 @@ type Target struct {
 	Options           map[string]string
 }
 
-func (t *Target) ToObserver() (obs plug.Observer, err error) {
+func (t *Target) ToObserver(config ZMSConf) (obs plug.Observer, err error) {
 	obs, err = plugin.GetRegistry().CreateObserver(t.PluginName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create plugin observer %s: %w", t.PluginName, err)
@@ -28,9 +28,12 @@ func (t *Target) ToObserver() (obs plug.Observer, err error) {
 	}
 
 	// to initialize
+	obs.InitBuffer(config.WorkingDir, t.OfflineBufferTime)
 	obs.SetName(t.Name)
-	obs.SetFilter(t.RawFilter)
 	obs.PrepareMetrics(t.Source)
+
+	f := obs.PrepareFilter(t.RawFilter)
+	obs.SetFilter(f)
 
 	return obs, err
 }

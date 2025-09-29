@@ -6,6 +6,7 @@ import (
 
 	"szuro.net/zms/internal/config"
 	"szuro.net/zms/internal/logger"
+	"szuro.net/zms/pkg/filter"
 )
 
 type Inputer interface {
@@ -51,7 +52,11 @@ func (bs *baseInput) cleanup() {
 
 func (bs *baseInput) setFilter() {
 	for _, subject := range bs.subjects {
-		subject.SetFilter(bs.config.TagFilter)
+		f := &filter.DefaultFilter{}
+		if bs.config.TagFilter != nil {
+			f = filter.NewDefaultFilter(bs.config.TagFilter.(map[string]any))
+		}
+		subject.SetFilter(f)
 	}
 }
 
@@ -59,9 +64,8 @@ func (bs *baseInput) setTargets() {
 	for _, target := range bs.config.Targets {
 		for name, subject := range bs.subjects {
 			if slices.Contains(target.Source, name) {
-				t, err := target.ToObserver()
+				t, err := target.ToObserver(bs.config)
 				if err == nil {
-					t.InitBuffer(bs.config.WorkingDir, target.OfflineBufferTime)
 					subject.Register(t)
 				} else {
 					logger.Warn("Failed to register target", slog.String("name", target.Name))
