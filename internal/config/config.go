@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
-	"szuro.net/zms/internal/filter"
 )
 
 const FILE_MODE = "file"
@@ -15,13 +14,13 @@ type ZMSConf struct {
 	ServerConfig string `yaml:"server_config"`
 	Mode         string
 	Targets      []Target
-	TagFilter    filter.Filter `yaml:"tag_filters"`
-	BufferSize   int           `yaml:"buffer_size"`
-	WorkingDir   string        `yaml:"working_dir"`
-	Http         HTTPConf      `yaml:"http"`
-	LogLevel     string        `yaml:"log_level"`
-	PluginsDir   string        `yaml:"plugins_dir"` // Directory containing plugin .so files
-	slogLevel    slog.Level    `yaml:"omitempty"`
+	TagFilter    any        `yaml:"tag_filters"`
+	BufferSize   int        `yaml:"buffer_size"`
+	WorkingDir   string     `yaml:"working_dir"`
+	Http         HTTPConf   `yaml:"http"`
+	LogLevel     string     `yaml:"log_level"`
+	PluginsDir   string     `yaml:"plugins_dir"` // Directory containing plugin .so files
+	slogLevel    slog.Level `yaml:"omitempty"`
 }
 
 func (zc *ZMSConf) setLogLevel() {
@@ -69,8 +68,6 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 	if conf.ServerConfig == "" {
 		conf.ServerConfig = "/etc/zabbix/zabbix_server.conf"
 	}
-
-	conf.TagFilter.Activate()
 
 	return
 }

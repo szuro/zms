@@ -7,6 +7,7 @@ import (
 
 	zbxpkg "szuro.net/zms/pkg/zbx"
 
+	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 )
 
@@ -41,14 +42,14 @@ func (p *Print) Initialize(connection string, options map[string]string) error {
 	default:
 		p.out = os.Stdout
 	}
+	p.Filter = &filter.DefaultFilter{}
+
 	return nil
 }
 
 func (p *Print) SaveHistory(h []zbxpkg.History) bool {
-	for _, H := range h {
-		if !p.EvaluateFilter(H.Tags) {
-			continue
-		}
+	history := p.Filter.FilterHistory(h)
+	for _, H := range history {
 		msg := fmt.Sprintf("Host: %s; Item: %s; Time: %d; Value: %v", H.Host.Host, H.Name, H.Clock, H.Value)
 		_, err := fmt.Fprintln(p.out, msg)
 		if err != nil {
@@ -60,7 +61,8 @@ func (p *Print) SaveHistory(h []zbxpkg.History) bool {
 }
 
 func (p *Print) SaveTrends(t []zbxpkg.Trend) bool {
-	for _, T := range t {
+	trends := p.Filter.FilterTrends(t)
+	for _, T := range trends {
 		msg := fmt.Sprintf(
 			"Host: %s; Item: %s; Time: %d; Min/Max/Avg: %f/%f/%f",
 			T.Host.Host, T.Name, T.Clock, T.Min, T.Max, T.Avg,

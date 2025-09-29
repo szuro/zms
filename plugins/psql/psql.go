@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"szuro.net/zms/internal/logger"
+	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -88,6 +89,8 @@ func (p *PSQL) Initialize(connection string, options map[string]string) error {
 
 	p.updateStats()
 
+	p.Filter = &filter.DefaultFilter{}
+
 	return nil
 }
 
@@ -113,12 +116,7 @@ func (p *PSQL) SaveHistory(h []zbxpkg.History) bool {
 	}
 
 	// Filter history entries
-	filtered := make([]zbxpkg.History, 0, len(h))
-	for _, history := range h {
-		if p.EvaluateFilter(history.Tags) {
-			filtered = append(filtered, history)
-		}
-	}
+	filtered := p.Filter.FilterHistory(h)
 
 	if len(filtered) == 0 {
 		return true

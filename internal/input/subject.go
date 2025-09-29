@@ -3,7 +3,7 @@ package input
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/filter"
+	"szuro.net/zms/pkg/filter"
 	plug "szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -13,7 +13,7 @@ type Subjecter interface {
 	Register(observer plug.Observer)
 	Deregister(observer plug.Observer)
 	NotifyAll()
-	SetFilter(filter filter.Filter)
+	SetFilter(filter any)
 	Cleanup()
 	SetBuffer(size int)
 	GetFunnel() chan any
@@ -85,7 +85,16 @@ func (bs *Subject[T]) NotifyAll() {
 func (bs *Subject[T]) AcceptValues() {
 	for h := range bs.Funnel {
 		v := h.(T)
-		if !bs.globalFilter.EvaluateFilter(v.ShowTags()) {
+		var accepted bool
+		switch h := h.(type) {
+		case zbxpkg.History:
+			accepted = bs.globalFilter.AcceptHistory(h)
+		case zbxpkg.Trend:
+			accepted = bs.globalFilter.AcceptTrend(h)
+		case zbxpkg.Event:
+			accepted = bs.globalFilter.AcceptEvent(h)
+		}
+		if !accepted {
 			continue
 		}
 		bs.values = append(bs.values, v)
@@ -101,8 +110,12 @@ func (bs *Subject[T]) AcceptValues() {
 	}
 }
 
-func (bs *Subject[T]) SetFilter(filter filter.Filter) {
-	bs.globalFilter = filter
+func (bs *Subject[T]) SetFilter(rawFilter any) {
+	if rawFilter != nil {
+		bs.globalFilter = filter.NewDefaultFilter(rawFilter.(map[string]any))
+	} else {
+		bs.globalFilter = &filter.DefaultFilter{}
+	}
 }
 
 func (bs *Subject[T]) Cleanup() {

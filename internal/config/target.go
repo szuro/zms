@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	"szuro.net/zms/internal/filter"
 	"szuro.net/zms/internal/plugin"
 	plug "szuro.net/zms/pkg/plugin"
 )
@@ -12,8 +11,8 @@ type Target struct {
 	Name              string
 	PluginName        string `yaml:"type"`
 	Connection        string
-	OfflineBufferTime int64         `yaml:"offline_buffer_time"` // Time in hours to keep offline buffer
-	TagFilter         filter.Filter `yaml:"tag_filters"`
+	OfflineBufferTime int64 `yaml:"offline_buffer_time"` // Time in hours to keep offline buffer
+	RawFilter         any   `yaml:"filter"`
 	Source            []string
 	Options           map[string]string
 }
@@ -29,10 +28,8 @@ func (t *Target) ToObserver() (obs plug.Observer, err error) {
 	}
 
 	// to initialize
-	filter := t.TagFilter
-	filter.Activate()
 	obs.SetName(t.Name)
-	obs.SetFilter(filter)
+	obs.SetFilter(t.RawFilter)
 	obs.PrepareMetrics(t.Source)
 
 	return obs, err

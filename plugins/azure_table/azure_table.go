@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
+	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -54,15 +55,14 @@ func (client *AzureTable) Initialize(connection string, options map[string]strin
 	client.h = service.NewClient("history")
 	client.t = service.NewClient("trends")
 	// client.e = service.NewClient("events")
+	client.Filter = &filter.DefaultFilter{}
 
 	return nil
 }
 
 func (az *AzureTable) SaveHistory(h []zbxpkg.History) bool {
-	for _, H := range h {
-		if !az.EvaluateFilter(H.Tags) {
-			continue
-		}
+	history := az.Filter.FilterHistory(h)
+	for _, H := range history {
 		entity := HistoryEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(H.ItemID),
@@ -91,10 +91,8 @@ func (az *AzureTable) SaveHistory(h []zbxpkg.History) bool {
 }
 
 func (az *AzureTable) SaveTrends(t []zbxpkg.Trend) bool {
-	for _, T := range t {
-		if !az.EvaluateFilter(T.Tags) {
-			continue
-		}
+	trends := az.Filter.FilterTrends(t)
+	for _, T := range trends {
 		entity := TrendEntity{
 			Entity: aztables.Entity{
 				PartitionKey: fmt.Sprint(T.ItemID),

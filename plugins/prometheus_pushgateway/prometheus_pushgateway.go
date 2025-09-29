@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 
+	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -38,15 +39,13 @@ func (p *PrometheusPushgateway) Initialize(connection string, options map[string
 	}
 
 	p.registry = prometheus.NewRegistry()
+	p.Filter = &filter.DefaultFilter{}
 	return nil
 }
 
 func (p *PrometheusPushgateway) SaveHistory(h []zbxpkg.History) bool {
-	for _, H := range h {
-		if !p.EvaluateFilter(H.Tags) {
-			continue
-		}
-
+	history := p.Filter.FilterHistory(h)
+	for _, H := range history {
 		// Only handle numeric values
 		if H.Type != zbxpkg.FLOAT && H.Type != zbxpkg.UNSIGNED {
 			continue
@@ -92,11 +91,8 @@ func (p *PrometheusPushgateway) SaveHistory(h []zbxpkg.History) bool {
 }
 
 func (p *PrometheusPushgateway) SaveTrends(t []zbxpkg.Trend) bool {
-	for _, T := range t {
-		if !p.EvaluateFilter(T.Tags) {
-			continue
-		}
-
+	trends := p.Filter.FilterTrends(t)
+	for _, T := range trends {
 		// Create gauge metrics for min, max, avg
 		minGauge := prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "zabbix_trend_min",

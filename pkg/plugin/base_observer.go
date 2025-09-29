@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/filter"
+	"szuro.net/zms/pkg/filter"
 
 	"szuro.net/zms/pkg/zbx"
 )
@@ -28,7 +28,7 @@ type BaseObserverImpl struct {
 	Monitor observerMetrics
 
 	// localFilter handles tag-based filtering for this observer
-	localFilter filter.Filter
+	Filter filter.Filter
 
 	// buffer provides offline data storage capability
 	buffer ZMSBuffer
@@ -100,8 +100,12 @@ func (b *BaseObserverImpl) InitBuffer(bufferPath string, ttl int64) {
 // The filter is used to determine which data should be processed
 // by this observer based on tag matching rules.
 // Implements the BaseObserver interface.
-func (b *BaseObserverImpl) SetFilter(filter filter.Filter) {
-	b.localFilter = filter
+func (b *BaseObserverImpl) SetFilter(rawFilter any) {
+	if rawFilter != nil {
+		b.Filter = filter.NewDefaultFilter(rawFilter.(map[string]any))
+	} else {
+		b.Filter = &filter.DefaultFilter{}
+	}
 }
 
 // PrepareMetrics initializes Prometheus metrics for the specified export types.
@@ -125,9 +129,9 @@ func (b *BaseObserverImpl) Cleanup() {
 // EvaluateFilter checks if the given tags pass the configured filter.
 // Plugins should use this method to apply filtering before processing data.
 // Returns true if the data should be processed, false if it should be filtered out.
-func (b *BaseObserverImpl) EvaluateFilter(tags []zbx.Tag) bool {
-	return b.localFilter.EvaluateFilter(tags)
-}
+// func (b *BaseObserverImpl) EvaluateFilter(tags []zbx.Tag) bool {
+// 	return b.localFilter.EvaluateFilter(tags)
+// }
 
 // SaveHistory is not implemented in BaseObserverImpl.
 // Plugins must implement this method to process history data.

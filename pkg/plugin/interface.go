@@ -49,7 +49,7 @@
 package plugin
 
 import (
-	"szuro.net/zms/internal/filter"
+	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/zbx"
 )
 
@@ -96,7 +96,7 @@ type Observer interface {
 
 	// SetFilter configures the tag filter for this observer.
 	// Used to filter which data should be processed by this observer.
-	SetFilter(filter filter.Filter)
+	SetFilter(filter any)
 
 	// PrepareMetrics initializes Prometheus metrics for the specified export types.
 	// exports: list of export types this observer will handle ("history", "trends", "events")
@@ -146,6 +146,7 @@ type BaseObserver interface {
 // Each plugin must export a function with this signature named "NewObserver".
 //
 // Example:
+//
 //	func NewObserver() plugin.Observer {
 //	    return &MyPlugin{}
 //	}
@@ -156,6 +157,7 @@ type PluginFactory func() Observer
 // information about the plugin to ZMS and users.
 //
 // Example:
+//
 //	var PluginInfo = plugin.PluginInfo{
 //	    Name:        "my-plugin",
 //	    Version:     "1.0.0",
