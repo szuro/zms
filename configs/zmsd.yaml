@@ -4,6 +4,7 @@
 #
 # server_config: /etc/zabbix/zabbix_server.conf
 # buffer_size: 100
+# plugins_dir: /usr/lib/zms/plugins    # Directory containing plugin .so files
 # http:
 #   listen_address: localhost
 #   listen_port: 2020
@@ -16,8 +17,10 @@
 #     value: <value>
 # targets:
 # - name: <unique_name>
-#   type: pushgateway|azuretable|print
+#   type: pushgateway|azuretable|print|other plugin
 #   connection: <connectionstring>
+#   options:                       # Plugin-specific options (optional)
+#     custom_option: value
 #   tag_filters:
 #     accepted:
 #     - tag: <name>
@@ -29,3 +32,19 @@
 #   - history
 #   - trends
 #   - events
+#
+# # Example plugin configuration:
+# - name: file_output
+#   type: plugin:file_observer
+#   connection: /tmp/zms_files
+#   source:
+#   - history
+#   - trends
+#
+# # Example log_print plugin configuration:
+# # Filters and outputs only LOG type history items to stdout/stderr
+# - name: log_output
+#   type: log_print
+#   connection: stdout              # or "stderr"
+#   exports:
+#   - history
