@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 
-	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -39,7 +38,6 @@ func (p *PrometheusPushgateway) Initialize(connection string, options map[string
 	}
 
 	p.registry = prometheus.NewRegistry()
-	p.Filter = &filter.DefaultFilter{}
 	return nil
 }
 

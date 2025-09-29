@@ -8,7 +8,6 @@ import (
 	"log/slog"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
-	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -55,7 +54,6 @@ func (client *AzureTable) Initialize(connection string, options map[string]strin
 	client.h = service.NewClient("history")
 	client.t = service.NewClient("trends")
 	// client.e = service.NewClient("events")
-	client.Filter = &filter.DefaultFilter{}
 
 	return nil
 }

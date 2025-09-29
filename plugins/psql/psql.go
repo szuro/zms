@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -88,8 +87,6 @@ func (p *PSQL) Initialize(connection string, options map[string]string) error {
 	})
 
 	p.updateStats()
-
-	p.Filter = &filter.DefaultFilter{}
 
 	return nil
 }

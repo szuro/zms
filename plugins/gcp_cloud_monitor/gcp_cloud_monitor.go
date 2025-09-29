@@ -18,7 +18,6 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"google.golang.org/api/option"
-	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
 )
@@ -67,7 +66,6 @@ func (cm *CloudMonitor) Initialize(connection string, options map[string]string)
 
 	cm.resource = newResource()
 	createHistoryMetric(cm.projectID)
-	cm.Filter = &filter.DefaultFilter{}
 
 	return nil
 }

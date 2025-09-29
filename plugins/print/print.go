@@ -7,7 +7,6 @@ import (
 
 	zbxpkg "szuro.net/zms/pkg/zbx"
 
-	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/plugin"
 )
 
@@ -42,7 +41,6 @@ func (p *Print) Initialize(connection string, options map[string]string) error {
 	default:
 		p.out = os.Stdout
 	}
-	p.Filter = &filter.DefaultFilter{}
 
 	return nil
 }
