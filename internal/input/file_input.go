@@ -7,10 +7,10 @@ import (
 
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/nxadm/tail"
-	"szuro.net/zms/internal/zbx"
-	zbxpkg "szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/internal/config"
 	"szuro.net/zms/internal/logger"
+	"szuro.net/zms/internal/zbx"
+	zbxpkg "szuro.net/zms/pkg/zbx"
 )
 
 type FileInput struct {
@@ -26,7 +26,7 @@ func NewFileInput(zbxConf zbx.ZabbixConf, zmsConf config.ZMSConf) (fi *FileInput
 	fi.zbxConf = zbxConf
 	fi.subjects = make(map[string]Subjecter)
 
-	dbPath := path.Join(zmsConf.WorkingDir, "index.db")
+	dbPath := path.Join(zmsConf.DataDir, "index.db")
 	db, err := badger.Open(badger.DefaultOptions(dbPath).WithLogger(logger.Default()))
 	logger.Debug("Initialized BadgerDB for file index", slog.String("path", dbPath))
 	if err != nil {

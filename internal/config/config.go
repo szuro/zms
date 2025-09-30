@@ -16,7 +16,7 @@ type ZMSConf struct {
 	Targets      []Target
 	TagFilter    any        `yaml:"tag_filters"`
 	BufferSize   int        `yaml:"buffer_size"`
-	WorkingDir   string     `yaml:"working_dir"`
+	DataDir      string     `yaml:"data_dir"`
 	Http         HTTPConf   `yaml:"http"`
 	LogLevel     string     `yaml:"log_level"`
 	PluginsDir   string     `yaml:"plugins_dir"` // Directory containing plugin .so files
@@ -59,29 +59,26 @@ func ParseZMSConfig(path string) (conf ZMSConf) {
 		panic("Cannot parse ZMS config!")
 	}
 
-	conf.setMode(conf.Mode)
-	conf.setBuffer(conf.BufferSize)
-	conf.setPort(conf.Http.ListenPort)
+	conf.setMode()
+	conf.setBuffer()
+	conf.setPort()
+	conf.setWorkDir()
 	conf.setOfflineBuffers()
 
 	conf.setLogLevel()
-	if conf.ServerConfig == "" {
-		conf.ServerConfig = "/etc/zabbix/zabbix_server.conf"
-	}
+	conf.setZbxConf()
 
 	return
 }
 
-func (zc *ZMSConf) setBuffer(buffer int) {
-	if buffer <= 0 {
+func (zc *ZMSConf) setBuffer() {
+	if zc.BufferSize <= 0 {
 		zc.BufferSize = 100
-	} else {
-		zc.BufferSize = buffer
 	}
 }
 
-func (zc *ZMSConf) setMode(mode string) {
-	switch mode {
+func (zc *ZMSConf) setMode() {
+	switch zc.Mode {
 	case FILE_MODE:
 		zc.Mode = FILE_MODE
 	case HTTP_MODE:
@@ -91,11 +88,10 @@ func (zc *ZMSConf) setMode(mode string) {
 	}
 }
 
-func (zc *ZMSConf) setPort(port int) {
-	if port == 0 {
-		port = 2020
+func (zc *ZMSConf) setPort() {
+	if zc.Http.ListenPort == 0 {
+		zc.Http.ListenPort = 2020
 	}
-	zc.Http.ListenPort = port
 }
 
 func (zc *ZMSConf) setOfflineBuffers() {
@@ -103,5 +99,17 @@ func (zc *ZMSConf) setOfflineBuffers() {
 		if zc.Targets[i].OfflineBufferTime < 0 {
 			zc.Targets[i].OfflineBufferTime = 0
 		}
+	}
+}
+
+func (zc *ZMSConf) setWorkDir() {
+	if zc.DataDir == "" {
+		zc.DataDir = "/var/lib/zms/"
+	}
+}
+
+func (zc *ZMSConf) setZbxConf() {
+	if zc.ServerConfig == "" {
+		zc.ServerConfig = "/etc/zabbix/zabbix_server.conf"
 	}
 }

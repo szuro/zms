@@ -28,7 +28,7 @@ func (t *Target) ToObserver(config ZMSConf) (obs plug.Observer, err error) {
 	}
 
 	// to initialize
-	obs.InitBuffer(config.WorkingDir, t.OfflineBufferTime)
+	obs.InitBuffer(config.DataDir, t.OfflineBufferTime)
 	obs.SetName(t.Name)
 	obs.PrepareMetrics(t.Source)
 

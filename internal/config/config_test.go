@@ -18,11 +18,11 @@ func TestSetBuffer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := ZMSConf{}
-			config.setBuffer(tt.input)
+			config := ZMSConf{BufferSize: tt.input}
+			config.setBuffer()
 			result := config.BufferSize
 			if result != tt.expected {
-				t.Errorf("setPort(%d) = %d; want %d", tt.input, result, tt.expected)
+				t.Errorf("setBuffer() with BufferSize=%d = %d; want %d", tt.input, result, tt.expected)
 			}
 		})
 	}
@@ -42,11 +42,11 @@ func TestSetMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := ZMSConf{}
-			config.setMode(tt.input)
+			config := ZMSConf{Mode: tt.input}
+			config.setMode()
 			result := config.Mode
 			if result != tt.expected {
-				t.Errorf("setMode(%s) = %s; want %s", tt.input, result, tt.expected)
+				t.Errorf("setMode() with Mode=%s = %s; want %s", tt.input, result, tt.expected)
 			}
 		})
 	}
@@ -65,11 +65,11 @@ func TestSetPort(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := ZMSConf{}
-			config.setPort(tt.input)
+			config := ZMSConf{Http: HTTPConf{ListenPort: tt.input}}
+			config.setPort()
 			result := config.Http.ListenPort
 			if result != tt.expected {
-				t.Errorf("setPort(%d) = %d; want %d", tt.input, result, tt.expected)
+				t.Errorf("setPort() with ListenPort=%d = %d; want %d", tt.input, result, tt.expected)
 			}
 		})
 	}
