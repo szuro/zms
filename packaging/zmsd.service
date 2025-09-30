@@ -1,0 +1,36 @@
+[Unit]
+Description=Zabbix Metric Shipper
+Documentation=https://github.com/szuro/zms
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=zms
+Group=zms
+ExecStart=/usr/bin/zmsd -c /etc/zms/zmsd.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+# Environment configuration
+EnvironmentFile=-/etc/sysconfig/zms
+EnvironmentFile=-/etc/default/zms
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/zms
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Working directory
+WorkingDirectory=/var/lib/zms
+
+[Install]
+WantedBy=multi-user.target
