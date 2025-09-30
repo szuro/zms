@@ -32,12 +32,15 @@ RUN go mod download
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 COPY pkg/ ./pkg/
-COPY plugins/ .plugins/
+COPY plugins/ ./plugins/
 
 # Set build environment variables
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
 ENV GOOS=linux
 ENV GOARCH=amd64
+ENV VERSION=0.0.0
+ENV COMMIT=
+ENV BUILD_DATE=
 
 # Create build script
 COPY scripts/build.sh /usr/local/bin/
