@@ -3,6 +3,7 @@ package plugin
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"log/slog"
 	"path"
 	"time"
@@ -140,6 +141,9 @@ func (b ZMSDefaultBuffer) DeleteEvents(events []zbx.Event) (err error) {
 }
 
 func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTTL time.Duration) (err error) {
+	if buffer == nil {
+		return errors.New("Cannot write to nil buffer")
+	}
 	var value bytes.Buffer
 	enc := gob.NewEncoder(&value)
 	txn := buffer.NewTransaction(true)
@@ -161,6 +165,9 @@ func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTT
 }
 
 func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered []T, err error) {
+	if buffer == nil {
+		return buffered, errors.New("Cannot read from nil buffer")
+	}
 	opts := badger.DefaultIteratorOptions
 	opts.PrefetchSize = batchSize
 	txn := buffer.NewTransaction(false)
@@ -200,6 +207,9 @@ func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered [
 }
 
 func deleteFromBuffer[T zbx.Export](buffer *badger.DB, buffered []T) (err error) {
+	if buffer == nil {
+		return errors.New("Cannot delete from nil buffer")
+	}
 	txn := buffer.NewTransaction(true)
 	defer txn.Discard()
 	for _, item := range buffered {
