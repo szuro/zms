@@ -94,6 +94,13 @@ const (
 	TREND = "trends"
 )
 
+const (
+	TREND_AVG   = "avg"
+	TREND_MIN   = "min"
+	TREND_MAX   = "max"
+	TREND_COUNT = "count"
+)
+
 // Host represents a Zabbix host with its technical name and display name.
 type Host struct {
 	// Host is the technical host name used internally by Zabbix.
