@@ -30,8 +30,8 @@ type BaseObserverImpl struct {
 	// localFilter handles tag-based filtering for this observer
 	Filter filter.Filter
 
-	// buffer provides offline data storage capability
-	buffer ZMSBuffer
+	// Buffer provides offline data storage capability
+	Buffer ZMSBuffer
 
 	// enabledExports tracks which export types this observer handles
 	enabledExports []string
@@ -92,8 +92,8 @@ func (b *BaseObserverImpl) SetName(name string) {
 // providing reliability through temporary persistence.
 // Implements the BaseObserver interface.
 func (b *BaseObserverImpl) InitBuffer(bufferPath string, ttl int64) {
-	b.buffer = ZMSDefaultBuffer{}
-	b.buffer.InitBuffer(bufferPath, ttl)
+	b.Buffer = ZMSDefaultBuffer{}
+	b.Buffer.InitBuffer(bufferPath, ttl)
 }
 
 // PrepareFilter creates a filter instance from raw configuration data.
@@ -130,8 +130,8 @@ func (b *BaseObserverImpl) PrepareMetrics(exports []string) {
 // Plugins should call this method in their own Cleanup implementation.
 // Implements the BaseObserver interface.
 func (b *BaseObserverImpl) Cleanup() {
-	if b.buffer != nil {
-		b.buffer.Cleanup()
+	if b.Buffer != nil {
+		b.Buffer.Cleanup()
 	}
 }
 
