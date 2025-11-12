@@ -43,15 +43,17 @@ func main() {
 	// Load plugins if plugin directory is configured
 	if zmsConfig.PluginsDir != "" {
 		logger.Info("Loading plugins", slog.String("dir", zmsConfig.PluginsDir))
-		if err := plugin.GetRegistry().LoadPluginsFromDir(zmsConfig.PluginsDir); err != nil {
-			logger.Error("Failed to load plugins", slog.Any("error", err))
+
+		// Load new gRPC-based plugins
+		if err := plugin.GetGRPCRegistry().LoadPluginsFromDir(zmsConfig.PluginsDir); err != nil {
+			logger.Error("Failed to load gRPC plugins", slog.Any("error", err))
 			// Continue execution - plugins are optional
 		}
 
-		// List loaded plugins
-		plugins := plugin.GetRegistry().ListPlugins()
-		for _, p := range plugins {
-			logger.Info("Loaded plugin",
+		// List loaded gRPC plugins
+		grpcPlugins := plugin.GetGRPCRegistry().ListPlugins()
+		for _, p := range grpcPlugins {
+			logger.Info("Loaded gRPC plugin",
 				slog.String("name", p.Name),
 				slog.String("version", p.Version))
 		}

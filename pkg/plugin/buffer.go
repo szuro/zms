@@ -142,7 +142,7 @@ func (b ZMSDefaultBuffer) DeleteEvents(events []zbx.Event) (err error) {
 
 func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTTL time.Duration) (err error) {
 	if buffer == nil {
-		return errors.New("Cannot write to nil buffer")
+		return errors.New("cannot write to nil buffer")
 	}
 	var value bytes.Buffer
 	enc := gob.NewEncoder(&value)
@@ -166,7 +166,7 @@ func saveToBuffer[T zbx.Export](buffer *badger.DB, toBuffer []T, offlineBufferTT
 
 func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered []T, err error) {
 	if buffer == nil {
-		return buffered, errors.New("Cannot read from nil buffer")
+		return buffered, errors.New("cannot read from nil buffer")
 	}
 	opts := badger.DefaultIteratorOptions
 	opts.PrefetchSize = batchSize
@@ -208,7 +208,7 @@ func fetchfromBuffer[T zbx.Export](buffer *badger.DB, batchSize int) (buffered [
 
 func deleteFromBuffer[T zbx.Export](buffer *badger.DB, buffered []T) (err error) {
 	if buffer == nil {
-		return errors.New("Cannot delete from nil buffer")
+		return errors.New("cannot delete from nil buffer")
 	}
 	txn := buffer.NewTransaction(true)
 	defer txn.Discard()

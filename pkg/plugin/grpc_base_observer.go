@@ -4,8 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"szuro.net/zms/pkg/filter"
 	"szuro.net/zms/pkg/zbx"
 	"szuro.net/zms/proto"
@@ -33,9 +31,6 @@ type BaseObserverGRPC struct {
 	// Logger provides structured logging
 	Logger *slog.Logger
 
-	// Monitor provides access to Prometheus metrics
-	Monitor observerMetrics
-
 	// enabledExports tracks which export types this observer handles
 	enabledExports []proto.ExportType
 }
@@ -61,14 +56,7 @@ func (b *BaseObserverGRPC) Initialize(ctx context.Context, req *proto.Initialize
 	b.enabledExports = req.Exports
 
 	// Initialize filter
-	if req.Filter != nil {
-		b.Filter = b.createFilterFromProto(req.Filter)
-	} else {
-		b.Filter = &filter.DefaultFilter{}
-	}
-
-	// Initialize metrics
-	b.initMetrics()
+	b.Filter = b.createFilterFromProto(req.Filter)
 
 	return &proto.InitializeResponse{Success: true}, nil
 }
@@ -76,10 +64,6 @@ func (b *BaseObserverGRPC) Initialize(ctx context.Context, req *proto.Initialize
 // FilterHistory applies the configured filter to history data.
 // Returns only the history records that pass the filter.
 func (b *BaseObserverGRPC) FilterHistory(history []*proto.History) []zbx.History {
-	if b.Filter == nil {
-		return protoHistoryToZbx(history)
-	}
-
 	zbxHistory := protoHistoryToZbx(history)
 	return b.Filter.FilterHistory(zbxHistory)
 }
@@ -87,10 +71,6 @@ func (b *BaseObserverGRPC) FilterHistory(history []*proto.History) []zbx.History
 // FilterTrends applies the configured filter to trend data.
 // Returns only the trend records that pass the filter.
 func (b *BaseObserverGRPC) FilterTrends(trends []*proto.Trend) []zbx.Trend {
-	if b.Filter == nil {
-		return protoTrendsToZbx(trends)
-	}
-
 	zbxTrends := protoTrendsToZbx(trends)
 	return b.Filter.FilterTrends(zbxTrends)
 }
@@ -98,86 +78,17 @@ func (b *BaseObserverGRPC) FilterTrends(trends []*proto.Trend) []zbx.Trend {
 // FilterEvents applies the configured filter to event data.
 // Returns only the event records that pass the filter.
 func (b *BaseObserverGRPC) FilterEvents(events []*proto.Event) []zbx.Event {
-	if b.Filter == nil {
-		return protoEventsToZbx(events)
-	}
-
 	zbxEvents := protoEventsToZbx(events)
 	return b.Filter.FilterEvents(zbxEvents)
 }
 
 // createFilterFromProto converts a proto.FilterConfig to a filter.Filter instance.
-func (b *BaseObserverGRPC) createFilterFromProto(filterConfig *proto.FilterConfig) filter.Filter {
-	if filterConfig == nil {
+func (b *BaseObserverGRPC) createFilterFromProto(filter_ *proto.Filter) filter.Filter {
+	if filter_ == nil {
 		return &filter.DefaultFilter{}
 	}
 
-	rawFilter := map[string]any{
-		"accept": filterConfig.Accept,
-		"reject": filterConfig.Reject,
-	}
-
-	return filter.NewDefaultFilter(rawFilter)
-}
-
-// initMetrics initializes Prometheus metrics for this observer.
-func (b *BaseObserverGRPC) initMetrics() {
-	for _, exportType := range b.enabledExports {
-		exportName := exportTypeToString(exportType)
-
-		switch exportType {
-		case proto.ExportType_HISTORY:
-			b.Monitor.HistoryValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_operations_total",
-				Help:        "Total number of shipping operations",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-
-			b.Monitor.HistoryValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_errors_total",
-				Help:        "Total number of shipping errors",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-
-		case proto.ExportType_TRENDS:
-			b.Monitor.TrendsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_operations_total",
-				Help:        "Total number of shipping operations",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-
-			b.Monitor.TrendsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_errors_total",
-				Help:        "Total number of shipping errors",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-
-		case proto.ExportType_EVENTS:
-			b.Monitor.EventsValuesSent = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_operations_total",
-				Help:        "Total number of shipping operations",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-
-			b.Monitor.EventsValuesFailed = promauto.NewCounter(prometheus.CounterOpts{
-				Name:        "zms_shipping_errors_total",
-				Help:        "Total number of shipping errors",
-				ConstLabels: prometheus.Labels{"target_name": b.Name, "plugin_name": b.PluginName, "export_type": exportName},
-			})
-		}
-	}
-}
-
-// exportTypeToString converts proto.ExportType to string.
-func exportTypeToString(et proto.ExportType) string {
-	switch et {
-	case proto.ExportType_HISTORY:
-		return zbx.HISTORY
-	case proto.ExportType_TRENDS:
-		return zbx.TREND
-	case proto.ExportType_EVENTS:
-		return zbx.EVENT
-	default:
-		return "unknown"
-	}
+	filterConfig := filter.FilterConfig{Accepted: filter_.Accepted, Rejected: filter_.Rejected}
+	//TODO: handle filter_.Type if custom filters are implemented in the future
+	return filter.NewTagFilter(filterConfig)
 }

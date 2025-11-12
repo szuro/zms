@@ -52,10 +52,7 @@ func (bs *baseInput) cleanup() {
 
 func (bs *baseInput) setFilter() {
 	for _, subject := range bs.subjects {
-		f := &filter.DefaultFilter{}
-		if bs.config.TagFilter != nil {
-			f = filter.NewDefaultFilter(bs.config.TagFilter.(map[string]any))
-		}
+		f := filter.NewTagFilter(bs.config.Filter)
 		subject.SetFilter(f)
 	}
 }

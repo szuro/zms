@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -100,7 +99,7 @@ func (pr *GRPCPluginRegistry) LoadPluginsFromDir(pluginDir string) error {
 	logger.Info("Loading gRPC plugins from directory", slog.String("dir", pluginDir))
 
 	// Look for all files in the directory
-	matches, err := filepath.Glob(filepath.Join(pluginDir, "*"))
+	matches, err := filepath.Glob(filepath.Join(pluginDir, "/*"))
 	if err != nil {
 		return fmt.Errorf("failed to list plugin files in %s: %w", pluginDir, err)
 	}
@@ -188,48 +187,16 @@ func (pr *GRPCPluginRegistry) CleanupAll() {
 	pr.plugins = make(map[string]*GRPCLoadedPlugin)
 }
 
-// GRPCObserverWrapper wraps a gRPC observer client to provide a unified interface
-// with the old plugin system during the migration period.
-type GRPCObserverWrapper struct {
-	client     proto.ObserverServiceClient
-	pluginName string
-	name       string
-	ctx        context.Context
-	cancel     context.CancelFunc
-}
+// ListPlugins returns information about all loaded plugins
+func (pr *GRPCPluginRegistry) ListPlugins() []pluginPkg.PluginInfo {
 
-// NewGRPCObserverWrapper creates a new wrapper around a gRPC observer client.
-func NewGRPCObserverWrapper(client proto.ObserverServiceClient, pluginName string) *GRPCObserverWrapper {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &GRPCObserverWrapper{
-		client:     client,
-		pluginName: pluginName,
-		ctx:        ctx,
-		cancel:     cancel,
-	}
-}
-
-// GetClient returns the underlying gRPC client.
-func (w *GRPCObserverWrapper) GetClient() proto.ObserverServiceClient {
-	return w.client
-}
-
-// GetContext returns the context for RPC calls.
-func (w *GRPCObserverWrapper) GetContext() context.Context {
-	return w.ctx
-}
-
-// Cleanup cancels the context and cleans up resources.
-func (w *GRPCObserverWrapper) Cleanup() {
-	if w.cancel != nil {
-		w.cancel()
+	infos := make([]pluginPkg.PluginInfo, 0, len(pr.plugins))
+	for _, plugin := range pr.plugins {
+		infos = append(infos, pluginPkg.PluginInfo{
+			Name:    plugin.Name,
+			Version: "unknown", // Version info can be extended later
+		})
 	}
 
-	// Call plugin cleanup
-	_, err := w.client.Cleanup(context.Background(), &proto.CleanupRequest{})
-	if err != nil {
-		logger.Error("Failed to cleanup gRPC plugin",
-			slog.String("plugin", w.pluginName),
-			slog.Any("error", err))
-	}
+	return infos
 }

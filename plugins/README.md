@@ -1,208 +1,304 @@
-# ZMS Observer Plugins
+# ZMS gRPC Plugins
 
-This directory contains observer plugins for ZMS (Zabbix Metric Shipper).
+This directory contains plugins migrated to the new gRPC-based plugin system using HashiCorp's go-plugin framework.
 
-## Overview
+## Migration Overview
 
-ZMS supports a plugin system for creating custom observer implementations. Plugins are compiled as shared libraries and loaded dynamically at runtime, allowing developers to create custom output targets without recompiling the main application.
+All plugins from the old shared library system ([plugins/](../plugins/)) have been migrated to the new gRPC-based system. The new system provides:
 
-## Plugin Structure
+- **Better isolation**: Plugins run as separate processes
+- **Version compatibility**: No Go version matching required
+- **Crash resilience**: Plugin crashes don't affect the main application
+- **Protocol Buffers**: Type-safe communication via gRPC
 
-A plugin must be implemented as a Go package with the following requirements:
+## Available Plugins
 
-1. **Package Declaration**: Must be `package main`
-2. **Required Exports**: Must export `PluginInfo` variable and `NewObserver()` function
-3. **Interface Implementation**: Must implement the `plugin.Observer` interface
-4. **Base Observer**: Should embed `plugin.BaseObserverImpl` for core functionality
+### 1. PostgreSQL (`psql`)
+Stores Zabbix history data in PostgreSQL database.
 
-## Plugin Template
+**Features:**
+- Saves history data to `performance.messages` table
+- Connection pooling configuration
+- Prometheus metrics for connection stats
 
-```go
-package main
-
-import (
-    "szuro.net/zms/pkg/plugin"
-    zbxpkg "szuro.net/zms/pkg/zbx"
-)
-
-// Plugin metadata - REQUIRED
-var PluginInfo = plugin.PluginInfo{
-    Name:        "my-plugin",
-    Version:     "1.0.0",
-    Type:        "custom",
-    Description: "Custom observer plugin",
-    Author:      "Your Name",
-}
-
-// Plugin struct - embed BaseObserverImpl for core functionality
-type MyPlugin struct {
-    plugin.BaseObserverImpl
-    // Add your custom fields here
-}
-
-// Factory function - REQUIRED
-// This function is called by ZMS to create plugin instances
-func NewObserver() plugin.Observer {
-    return &MyPlugin{}
-}
-
-// Initialize your plugin - REQUIRED
-// connection: connection string from config
-// options: key-value options from config
-func (p *MyPlugin) Initialize(connection string, options map[string]string) error {
-    // Initialize your plugin here
-    return nil
-}
-
-// Return plugin type - REQUIRED
-func (p *MyPlugin) GetType() string {
-    return PluginInfo.Type
-}
-
-// Implement data processing methods as needed
-func (p *MyPlugin) SaveHistory(h []zbxpkg.History) bool {
-    for _, history := range h {
-        // Check filter (provided by BaseObserver)
-        if !p.EvaluateFilter(history.Tags) {
-            continue
-        }
-
-        // Process history data
-        // Use p.Monitor.HistoryValuesSent.Inc() for success metrics
-        // Use p.Monitor.HistoryValuesFailed.Inc() for error metrics
-    }
-    return true
-}
-
-func (p *MyPlugin) SaveTrends(t []zbxpkg.Trend) bool {
-    // Implement trend processing if needed
-    // If not implemented, this method will panic by default (from BaseObserver)
-    return true
-}
-
-func (p *MyPlugin) SaveEvents(e []zbxpkg.Event) bool {
-    // Implement event processing if needed
-    // If not implemented, this method will panic by default (from BaseObserver)
-    return true
-}
-```
-
-## Building Plugins
-
-Plugins must be compiled as shared libraries (`.so` files on Linux):
-
-```bash
-# Build plugin as shared library
-go build -buildmode=plugin -o my-plugin.so ./path/to/plugin
-
-# Place in plugins directory
-mkdir -p plugins/
-mv my-plugin.so plugins/
-```
-
-## Plugin Configuration
-
-Configure plugins in your `zmsd.yaml`:
-
+**Configuration:**
 ```yaml
 targets:
-  - name: "my-custom-target"
-    type: "plugin"
-    connection: "connection-string-here"
+  - name: "postgres-target"
+    type: "psql"
+    connection: "postgres://user:password@localhost/dbname?sslmode=disable"
     options:
-      key1: "value1"
-      key2: "value2"
+      max_conn: "10"
+      max_idle: "5"
+      max_conn_time: "1h"
+      max_idle_time: "30m"
+    exports:
+      - "history"
+```
+
+### 2. Azure Table Storage (`azure_table`)
+Stores Zabbix exports in Azure Table Storage.
+
+**Features:**
+- Saves history to `history` table
+- Saves trends to `trends` table
+- Uses itemID as partition key
+
+**Configuration:**
+```yaml
+targets:
+  - name: "azure-target"
+    type: "azure_table"
+    connection: "https://myaccount.table.core.windows.net/"
     exports:
       - "history"
       - "trends"
 ```
 
-## Available Functionality
+### 3. Prometheus Remote Write (`prometheus_remote_write`)
+Writes Zabbix data to Prometheus via Remote Write protocol.
 
-Plugins have access to core ZMS functionality through the embedded `BaseObserverImpl`:
+**Features:**
+- Converts history to Prometheus time series
+- Converts trends to separate metrics (min, max, avg, count)
+- Timestamp ordering for compliance
+- Only processes numeric values
 
-- **Filtering**: Use `p.EvaluateFilter(tags)` to apply configured tag filters
-- **Metrics**: Access Prometheus counters via `p.Monitor.*` fields
-- **Buffering**: Automatic offline buffering (handled by base observer)
-- **Configuration**: Access to connection string and options map
+**Configuration:**
+```yaml
+targets:
+  - name: "prometheus-remote"
+    type: "prometheus_remote_write"
+    connection: "http://prometheus:9090/api/v1/write"
+    exports:
+      - "history"
+      - "trends"
+```
 
-## Available Plugins
+### 4. Print (`print`)
+Outputs Zabbix data to stdout or stderr.
 
-### Print Plugin
-- **File**: `print/print.go`
-- **Type**: `print`
-- **Purpose**: Outputs data to stdout/stderr for debugging
-- **Configuration**: Connection string can be "stdout" or "stderr"
+**Features:**
+- Simple text output
+- Configurable output destination
+- Useful for debugging
 
-### PostgreSQL Plugin
-- **File**: `psql/psql.go`
-- **Type**: `postgresql`
-- **Purpose**: Stores data in PostgreSQL database
-- **Configuration**: Connection string is PostgreSQL URL
+**Configuration:**
+```yaml
+targets:
+  - name: "print-target"
+    type: "print"
+    connection: "stdout"  # or "stderr"
+    exports:
+      - "history"
+      - "trends"
+```
 
-### Azure Table Storage Plugin
-- **File**: `azure_table/azure_table.go`
-- **Type**: `azure_table`
-- **Purpose**: Stores data in Azure Table Storage
-- **Configuration**: Connection string is Azure Storage URL
+### 5. GCP Cloud Monitor (`gcp_cloud_monitor`)
+Sends Zabbix metrics to Google Cloud Monitoring.
 
-### GCP Cloud Monitoring Plugin
-- **File**: `gcp_cloud_monitor/gcp_cloud_monitor.go`
-- **Type**: `gcp_cloud_monitor`
-- **Purpose**: Sends metrics to Google Cloud Monitoring
-- **Configuration**: Uses default GCP credentials
+**Features:**
+- Creates custom metrics in GCP
+- Only processes numeric values (float/unsigned)
+- Configurable credentials
 
-### Prometheus Pushgateway Plugin
-- **File**: `prometheus_pushgateway/prometheus_pushgateway.go`
-- **Type**: `prometheus_pushgateway`
-- **Purpose**: Pushes metrics to Prometheus Pushgateway
-- **Configuration**: Connection string is Pushgateway URL
+**Configuration:**
+```yaml
+targets:
+  - name: "gcp-target"
+    type: "gcp_cloud_monitor"
+    connection: ""  # Uses default credentials
+    options:
+      credentials_file: "/path/to/service-account.json"  # Optional
+    exports:
+      - "history"
+```
 
-## Docker Plugin Builder
+### 6. Prometheus Pushgateway (`prometheus_pushgateway`)
+Pushes Zabbix metrics to Prometheus Pushgateway.
 
-A Docker image is available for building plugins in a consistent environment:
+**Features:**
+- Creates Prometheus gauges for history and trends
+- Configurable job name
+- Per-host instance grouping
+
+**Configuration:**
+```yaml
+targets:
+  - name: "pushgateway-target"
+    type: "prometheus_pushgateway"
+    connection: "http://pushgateway:9091"
+    options:
+      job_name: "zabbix_export"  # Optional, defaults to "zms_export"
+    exports:
+      - "history"
+      - "trends"
+```
+
+## Building Plugins
+
+### Manual Build
+
+Build each plugin as a standalone executable:
+
+```bash
+# PostgreSQL plugin
+cd plugins_grpc/psql
+go build -o psql .
+
+# Azure Table plugin
+cd plugins_grpc/azure_table
+go build -o azure_table .
+
+# And so on...
+```
+
+### Using Docker
+
+Use the Docker plugin builder for consistent builds:
 
 ```bash
 # Build the Docker image
-docker build -f Dockerfile.plugin-builder -t zms-plugin-builder .
+make docker-plugin-builder
 
-# Build plugins from host directory
-docker run --rm -v $(pwd)/my-plugins:/plugin-src -v $(pwd)/built-plugins:/plugins zms-plugin-builder
-
-# Interactive development
-docker run --rm -it -v $(pwd):/workspace -v $(pwd)/plugins:/plugins zms-plugin-builder bash
+# Build all gRPC plugins
+docker run -v $(pwd)/plugins_grpc:/plugins -v $(pwd)/bin:/output zms-plugin-builder:latest
 ```
 
-## Development Workflow
+## Plugin Structure
 
-1. **Create Plugin**: Write your plugin following the template above
-2. **Test Locally**: Build and test with local ZMS instance
-3. **Use Docker Builder**: Leverage the Docker plugin builder for consistent builds
-4. **Deploy**: Place compiled `.so` file in plugins directory
-5. **Configure**: Add plugin target to ZMS configuration
+All plugins follow this structure:
 
-## Best Practices
+```go
+package main
 
-- **Error Handling**: Always handle errors gracefully and update metrics accordingly
-- **Resource Management**: Clean up resources in plugin destructor if needed
-- **Filter Usage**: Always check `p.EvaluateFilter()` before processing data
-- **Metrics**: Update appropriate counters for monitoring and observability
-- **Thread Safety**: Ensure your plugin is thread-safe as it may be called concurrently
-- **Testing**: Test plugins thoroughly before deployment
+import (
+    "context"
+    "log"
+
+    "github.com/hashicorp/go-plugin"
+    pluginPkg "szuro.net/zms/pkg/plugin"
+    "szuro.net/zms/proto"
+)
+
+const PLUGIN_NAME = "my_plugin"
+
+type MyPlugin struct {
+    proto.UnimplementedObserverServiceServer
+    pluginPkg.BaseObserverGRPC
+    // Custom fields...
+}
+
+func NewMyPlugin() *MyPlugin {
+    return &MyPlugin{
+        BaseObserverGRPC: *pluginPkg.NewBaseObserverGRPC(),
+    }
+}
+
+func (p *MyPlugin) Initialize(ctx context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
+    resp, err := p.BaseObserverGRPC.Initialize(ctx, req)
+    if err != nil {
+        return resp, err
+    }
+
+    p.PluginName = PLUGIN_NAME
+
+    // Custom initialization...
+
+    return &proto.InitializeResponse{Success: true}, nil
+}
+
+func (p *MyPlugin) SaveHistory(ctx context.Context, req *proto.SaveHistoryRequest) (*proto.SaveResponse, error) {
+    history := p.FilterHistory(req.History)
+
+    // Process history...
+
+    return &proto.SaveResponse{
+        Success: true,
+        RecordsProcessed: int64(len(history)),
+    }, nil
+}
+
+func main() {
+    impl := NewMyPlugin()
+
+    plugin.Serve(&plugin.ServeConfig{
+        HandshakeConfig: pluginPkg.Handshake,
+        Plugins: map[string]plugin.Plugin{
+            "observer": &pluginPkg.ObserverPlugin{Impl: impl},
+        },
+        GRPCServer: plugin.DefaultGRPCServer,
+    })
+}
+```
+
+## Key Differences from Old Plugins
+
+| Aspect | Old System | New System |
+|--------|-----------|------------|
+| Build | `-buildmode=plugin` to `.so` | Standalone executable |
+| Loading | `plugin.Open()` | Process spawning via go-plugin |
+| Communication | Direct function calls | gRPC |
+| Interface | `plugin.Observer` | `proto.ObserverServiceServer` |
+| Base | `plugin.BaseObserverImpl` | `pluginPkg.BaseObserverGRPC` |
+| Isolation | Same process | Separate process |
+| Crash handling | Affects main app | Isolated |
+
+## Migration Checklist
+
+When migrating a plugin:
+
+- [x] Change package to `main`
+- [x] Embed `proto.UnimplementedObserverServiceServer`
+- [x] Embed `pluginPkg.BaseObserverGRPC` instead of `BaseObserverImpl`
+- [x] Update Initialize signature to accept `context.Context` and `*proto.InitializeRequest`
+- [x] Update Save* methods to accept context and proto requests, return `*proto.SaveResponse`
+- [x] Use `FilterHistory()`, `FilterTrends()`, `FilterEvents()` helper methods
+- [x] Convert from `plugin.Observer` to gRPC service
+- [x] Add `main()` function with `plugin.Serve()`
+- [x] Build as executable (not shared library)
+
+## Testing Plugins
+
+Test plugins with ZMS:
+
+```bash
+# Build plugin
+cd plugins_grpc/print
+go build -o print .
+
+# Place in plugins directory
+mkdir -p ../../bin/plugins
+cp print ../../bin/plugins/
+
+# Update zmsd.yaml to use the plugin
+# Run ZMS
+../../zmsd -c zmsd-test.yaml
+```
 
 ## Troubleshooting
 
-- **Plugin Load Errors**: Check Go version compatibility and shared library format
-- **Missing Symbols**: Ensure `PluginInfo` and `NewObserver` are properly exported
-- **Runtime Panics**: Implement all required interface methods or they will panic
-- **Filter Issues**: Verify tag filtering logic using `EvaluateFilter()`
+**Plugin not found:**
+- Ensure the executable is in the `plugins_dir` configured in `zmsd.yaml`
+- Verify the executable has execute permissions: `chmod +x plugin_name`
 
-## Dependencies
+**Handshake errors:**
+- Ensure the plugin uses the correct `pluginPkg.Handshake` config
+- Rebuild the plugin against the same ZMS version
 
-Plugins can import:
-- `szuro.net/zms/pkg/zbx` - Zabbix data types
-- `szuro.net/zms/pkg/plugin` - Plugin interfaces
-- Standard Go libraries
-- External packages (ensure they're available at runtime)
+**Connection failures:**
+- Check that the plugin implements all required gRPC methods
+- Verify proto definitions match between plugin and ZMS
 
-Avoid importing internal packages as they may change between versions.
+**Data not being processed:**
+- Check that the correct export types are enabled in config
+- Verify filter configuration allows the data through
+- Check plugin logs for errors
+
+## Development Resources
+
+- Main documentation: [CLAUDE.md](../CLAUDE.md)
+- Plugin interface: [pkg/plugin/grpc_plugin.go](../pkg/plugin/grpc_plugin.go)
+- Base observer: [pkg/plugin/grpc_base_observer.go](../pkg/plugin/grpc_base_observer.go)
+- Proto definitions: [proto/observer.proto](../proto/observer.proto)
+- Example plugin: [examples/plugins/log_print_grpc/](../examples/plugins/log_print_grpc/)

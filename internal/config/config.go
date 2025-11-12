@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+	"szuro.net/zms/pkg/filter"
 )
 
 const FILE_MODE = "file"
@@ -14,13 +15,13 @@ type ZMSConf struct {
 	ServerConfig string `yaml:"server_config"`
 	Mode         string
 	Targets      []Target
-	TagFilter    any        `yaml:"tag_filters"`
-	BufferSize   int        `yaml:"buffer_size"`
-	DataDir      string     `yaml:"data_dir"`
-	Http         HTTPConf   `yaml:"http"`
-	LogLevel     string     `yaml:"log_level"`
-	PluginsDir   string     `yaml:"plugins_dir"` // Directory containing plugin .so files
-	slogLevel    slog.Level `yaml:"omitempty"`
+	Filter       filter.FilterConfig `yaml:"filter,omitempty"`
+	BufferSize   int                 `yaml:"buffer_size"`
+	DataDir      string              `yaml:"data_dir"`
+	Http         HTTPConf            `yaml:"http"`
+	LogLevel     string              `yaml:"log_level"`
+	PluginsDir   string              `yaml:"plugins_dir"` // Directory containing plugin .so files
+	slogLevel    slog.Level          `yaml:"omitempty"`
 }
 
 func (zc *ZMSConf) setLogLevel() {

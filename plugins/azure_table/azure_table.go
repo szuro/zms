@@ -4,12 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"log/slog"
+	"log"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
-	"szuro.net/zms/pkg/plugin"
+	"github.com/hashicorp/go-plugin"
+
+	pluginPkg "szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
+	"szuro.net/zms/proto"
+)
+
+const (
+	PLUGIN_NAME = "azure_table"
 )
 
 type HistoryEntity struct {
@@ -26,40 +32,60 @@ type TrendEntity struct {
 	*zbxpkg.Trend
 }
 
-// Plugin metadata - REQUIRED
-var PluginInfo = plugin.PluginInfo{
-	Name:        "azure_table",
-	Version:     "1.0.0",
-	Description: "Azure Table Storage observer plugin",
-	Author:      "ZMS",
-}
-
-type AzureTable struct {
-	plugin.BaseObserverImpl
-	// e *aztables.Client
+// AzureTablePlugin implements the gRPC observer interface
+type AzureTablePlugin struct {
+	proto.UnimplementedObserverServiceServer
+	pluginPkg.BaseObserverGRPC
 	h *aztables.Client
 	t *aztables.Client
 }
 
-// Factory function - REQUIRED
-func NewObserver() plugin.Observer {
-	return &AzureTable{}
-}
-
-func (client *AzureTable) Initialize(connection string, options map[string]string) error {
-	service, err := aztables.NewServiceClientWithNoCredential(connection, nil)
-	if err != nil {
-		return err
+// NewAzureTablePlugin creates a new plugin instance
+func NewAzureTablePlugin() *AzureTablePlugin {
+	return &AzureTablePlugin{
+		BaseObserverGRPC: *pluginPkg.NewBaseObserverGRPC(),
 	}
-	client.h = service.NewClient("history")
-	client.t = service.NewClient("trends")
-	// client.e = service.NewClient("events")
-
-	return nil
 }
 
-func (az *AzureTable) SaveHistory(h []zbxpkg.History) bool {
-	history := az.Filter.FilterHistory(h)
+// Initialize configures the plugin with settings from main application
+func (p *AzureTablePlugin) Initialize(ctx context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
+	// Call base initialization to handle common setup
+	resp, err := p.BaseObserverGRPC.Initialize(ctx, req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Set plugin name for metrics
+	p.PluginName = PLUGIN_NAME
+
+	// Initialize Azure Table service client
+	service, err := aztables.NewServiceClientWithNoCredential(req.Connection, nil)
+	if err != nil {
+		p.Logger.Error("Failed to create Azure Table service client", "error", err)
+		return &proto.InitializeResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to create Azure Table service client: %v", err),
+		}, err
+	}
+
+	p.h = service.NewClient("history")
+	p.t = service.NewClient("trends")
+
+	p.Logger.Info("Azure Table plugin initialized",
+		"connection", req.Connection,
+		"name", req.Name)
+
+	return &proto.InitializeResponse{Success: true}, nil
+}
+
+// SaveHistory processes history data
+func (p *AzureTablePlugin) SaveHistory(ctx context.Context, req *proto.SaveHistoryRequest) (*proto.SaveResponse, error) {
+	// Filter history entries
+	history := p.FilterHistory(req.History)
+
+	processedCount := int64(0)
+	failedCount := int64(0)
+
 	for _, H := range history {
 		entity := HistoryEntity{
 			Entity: aztables.Entity{
@@ -71,25 +97,38 @@ func (az *AzureTable) SaveHistory(h []zbxpkg.History) bool {
 			HostName: H.Host.Name,
 		}
 		entity.Host = nil
+
 		marshalled, err := json.Marshal(entity)
 		if err != nil {
-			slog.Error("Failed to marshall to Entity", slog.Any("export", "history"), slog.Any("error", err))
-			az.Monitor.HistoryValuesFailed.Inc()
+			p.Logger.Error("Failed to marshall to Entity", "export", "history", "error", err)
+			failedCount++
 			continue
 		}
-		_, err = az.h.AddEntity(context.TODO(), marshalled, nil)
+
+		_, err = p.h.AddEntity(ctx, marshalled, nil)
 		if err != nil {
-			slog.Error("Failed to save entity", slog.Any("export", "history"), slog.Any("error", err))
-			az.Monitor.HistoryValuesFailed.Inc()
+			p.Logger.Error("Failed to save entity", "export", "history", "error", err)
+			failedCount++
 		} else {
-			az.Monitor.HistoryValuesSent.Inc()
+			processedCount++
 		}
 	}
-	return true
+
+	return &proto.SaveResponse{
+		Success:          failedCount == 0,
+		RecordsProcessed: processedCount,
+		RecordsFailed:    failedCount,
+	}, nil
 }
 
-func (az *AzureTable) SaveTrends(t []zbxpkg.Trend) bool {
-	trends := az.Filter.FilterTrends(t)
+// SaveTrends processes trend data
+func (p *AzureTablePlugin) SaveTrends(ctx context.Context, req *proto.SaveTrendsRequest) (*proto.SaveResponse, error) {
+	// Filter trend entries
+	trends := p.FilterTrends(req.Trends)
+
+	processedCount := int64(0)
+	failedCount := int64(0)
+
 	for _, T := range trends {
 		entity := TrendEntity{
 			Entity: aztables.Entity{
@@ -101,19 +140,53 @@ func (az *AzureTable) SaveTrends(t []zbxpkg.Trend) bool {
 			HostName: T.Host.Name,
 		}
 		entity.Host = nil
+
 		marshalled, err := json.Marshal(entity)
 		if err != nil {
-			slog.Error("Failed to marshall to Entity", slog.Any("export", "trends"), slog.Any("error", err))
-			az.Monitor.TrendsValuesFailed.Inc()
+			p.Logger.Error("Failed to marshall to Entity", "export", "trends", "error", err)
+			failedCount++
 			continue
 		}
-		_, err = az.t.AddEntity(context.TODO(), marshalled, nil)
+
+		_, err = p.t.AddEntity(ctx, marshalled, nil)
 		if err != nil {
-			slog.Error("Failed to save entity", slog.Any("export", "trends"), slog.Any("error", err))
-			az.Monitor.TrendsValuesFailed.Inc()
+			p.Logger.Error("Failed to save entity", "export", "trends", "error", err)
+			failedCount++
 		} else {
-			az.Monitor.TrendsValuesSent.Inc()
+			processedCount++
 		}
 	}
-	return true
+
+	return &proto.SaveResponse{
+		Success:          failedCount == 0,
+		RecordsProcessed: processedCount,
+		RecordsFailed:    failedCount,
+	}, nil
+}
+
+// SaveEvents is not supported by this plugin - returns success with no-op
+func (p *AzureTablePlugin) SaveEvents(ctx context.Context, req *proto.SaveEventsRequest) (*proto.SaveResponse, error) {
+	return &proto.SaveResponse{Success: true, RecordsProcessed: 0}, nil
+}
+
+// Cleanup releases any resources held by the plugin
+func (p *AzureTablePlugin) Cleanup(ctx context.Context, req *proto.CleanupRequest) (*proto.CleanupResponse, error) {
+	p.Logger.Info("Cleaning up Azure Table plugin")
+	return &proto.CleanupResponse{Success: true}, nil
+}
+
+// main is the entry point for the plugin binary
+func main() {
+	impl := NewAzureTablePlugin()
+
+	// Serve the plugin using HashiCorp go-plugin
+	plugin.Serve(&plugin.ServeConfig{
+		HandshakeConfig: pluginPkg.Handshake,
+		Plugins: map[string]plugin.Plugin{
+			"observer": &pluginPkg.ObserverPlugin{Impl: impl},
+		},
+		GRPCServer: plugin.DefaultGRPCServer,
+	})
+
+	log.Println("Plugin exited")
 }

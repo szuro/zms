@@ -1,48 +1,75 @@
 package main
 
 import (
+	"context"
+	"log"
 	"strconv"
 
+	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 
-	"szuro.net/zms/pkg/plugin"
+	pluginPkg "szuro.net/zms/pkg/plugin"
 	zbxpkg "szuro.net/zms/pkg/zbx"
+	"szuro.net/zms/proto"
 )
 
-// Plugin metadata - REQUIRED
-var PluginInfo = plugin.PluginInfo{
-	Name:        "prometheus_pushgateway",
-	Version:     "1.0.0",
-	Description: "Prometheus Pushgateway observer plugin",
-	Author:      "ZMS",
-}
+const (
+	PLUGIN_NAME = "prometheus_pushgateway"
+)
 
-type PrometheusPushgateway struct {
-	plugin.BaseObserverImpl
+// PrometheusPushgatewayPlugin implements the gRPC observer interface
+type PrometheusPushgatewayPlugin struct {
+	proto.UnimplementedObserverServiceServer
+	pluginPkg.BaseObserverGRPC
 	gatewayURL string
 	jobName    string
 	registry   *prometheus.Registry
 }
 
-// Factory function - REQUIRED
-func NewObserver() plugin.Observer {
-	return &PrometheusPushgateway{}
+// NewPrometheusPushgatewayPlugin creates a new plugin instance
+func NewPrometheusPushgatewayPlugin() *PrometheusPushgatewayPlugin {
+	return &PrometheusPushgatewayPlugin{
+		BaseObserverGRPC: *pluginPkg.NewBaseObserverGRPC(),
+	}
 }
 
-func (p *PrometheusPushgateway) Initialize(connection string, options map[string]string) error {
-	p.gatewayURL = connection
-	p.jobName = options["job_name"]
+// Initialize configures the plugin with settings from main application
+func (p *PrometheusPushgatewayPlugin) Initialize(ctx context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
+	// Call base initialization to handle common setup
+	resp, err := p.BaseObserverGRPC.Initialize(ctx, req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Set plugin name for metrics
+	p.PluginName = PLUGIN_NAME
+
+	// Configure Pushgateway
+	p.gatewayURL = req.Connection
+	p.jobName = req.Options["job_name"]
 	if p.jobName == "" {
 		p.jobName = "zms_export"
 	}
 
 	p.registry = prometheus.NewRegistry()
-	return nil
+
+	p.Logger.Info("Prometheus Pushgateway plugin initialized",
+		"gateway_url", p.gatewayURL,
+		"job_name", p.jobName,
+		"name", req.Name)
+
+	return &proto.InitializeResponse{Success: true}, nil
 }
 
-func (p *PrometheusPushgateway) SaveHistory(h []zbxpkg.History) bool {
-	history := p.Filter.FilterHistory(h)
+// SaveHistory processes history data
+func (p *PrometheusPushgatewayPlugin) SaveHistory(ctx context.Context, req *proto.SaveHistoryRequest) (*proto.SaveResponse, error) {
+	// Filter history entries
+	history := p.FilterHistory(req.History)
+
+	processedCount := int64(0)
+	failedCount := int64(0)
+
 	for _, H := range history {
 		// Only handle numeric values
 		if H.Type != zbxpkg.FLOAT && H.Type != zbxpkg.UNSIGNED {
@@ -77,19 +104,31 @@ func (p *PrometheusPushgateway) SaveHistory(h []zbxpkg.History) bool {
 			Grouping("instance", H.Host.Host)
 
 		if err := pusher.Push(); err != nil {
-			p.Monitor.HistoryValuesFailed.Inc()
+			failedCount++
+			p.Logger.Error("Failed to push to gateway", "error", err)
 		} else {
-			p.Monitor.HistoryValuesSent.Inc()
+			processedCount++
 		}
 
 		// Unregister for next iteration
 		p.registry.Unregister(gauge)
 	}
-	return true
+
+	return &proto.SaveResponse{
+		Success:          failedCount == 0,
+		RecordsProcessed: processedCount,
+		RecordsFailed:    failedCount,
+	}, nil
 }
 
-func (p *PrometheusPushgateway) SaveTrends(t []zbxpkg.Trend) bool {
-	trends := p.Filter.FilterTrends(t)
+// SaveTrends processes trend data
+func (p *PrometheusPushgatewayPlugin) SaveTrends(ctx context.Context, req *proto.SaveTrendsRequest) (*proto.SaveResponse, error) {
+	// Filter trend entries
+	trends := p.FilterTrends(req.Trends)
+
+	processedCount := int64(0)
+	failedCount := int64(0)
+
 	for _, T := range trends {
 		// Create gauge metrics for min, max, avg
 		minGauge := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -134,9 +173,10 @@ func (p *PrometheusPushgateway) SaveTrends(t []zbxpkg.Trend) bool {
 			Grouping("instance", T.Host.Host)
 
 		if err := pusher.Push(); err != nil {
-			p.Monitor.TrendsValuesFailed.Inc()
+			failedCount++
+			p.Logger.Error("Failed to push trends to gateway", "error", err)
 		} else {
-			p.Monitor.TrendsValuesSent.Inc()
+			processedCount++
 		}
 
 		// Unregister for next iteration
@@ -144,7 +184,37 @@ func (p *PrometheusPushgateway) SaveTrends(t []zbxpkg.Trend) bool {
 		p.registry.Unregister(maxGauge)
 		p.registry.Unregister(avgGauge)
 	}
-	return true
+
+	return &proto.SaveResponse{
+		Success:          failedCount == 0,
+		RecordsProcessed: processedCount,
+		RecordsFailed:    failedCount,
+	}, nil
 }
 
-// SaveEvents is not implemented - will use default panic behavior from BaseObserver
+// SaveEvents is not supported by this plugin - returns success with no-op
+func (p *PrometheusPushgatewayPlugin) SaveEvents(ctx context.Context, req *proto.SaveEventsRequest) (*proto.SaveResponse, error) {
+	return &proto.SaveResponse{Success: true, RecordsProcessed: 0}, nil
+}
+
+// Cleanup releases any resources held by the plugin
+func (p *PrometheusPushgatewayPlugin) Cleanup(ctx context.Context, req *proto.CleanupRequest) (*proto.CleanupResponse, error) {
+	p.Logger.Info("Cleaning up Prometheus Pushgateway plugin")
+	return &proto.CleanupResponse{Success: true}, nil
+}
+
+// main is the entry point for the plugin binary
+func main() {
+	impl := NewPrometheusPushgatewayPlugin()
+
+	// Serve the plugin using HashiCorp go-plugin
+	plugin.Serve(&plugin.ServeConfig{
+		HandshakeConfig: pluginPkg.Handshake,
+		Plugins: map[string]plugin.Plugin{
+			"observer": &pluginPkg.ObserverPlugin{Impl: impl},
+		},
+		GRPCServer: plugin.DefaultGRPCServer,
+	})
+
+	log.Println("Plugin exited")
+}
