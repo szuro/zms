@@ -51,13 +51,13 @@ type HTTPConf struct {
 func ParseZMSConfig(path string) (conf ZMSConf) {
 	file, err := os.ReadFile(path)
 	if err != nil {
-		panic("Cannot read ZMS config file!")
+		panic("Cannot read ZMS config file! Reason: " + err.Error())
 	}
 
 	conf = ZMSConf{}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		panic("Cannot parse ZMS config!")
+		panic("Cannot parse ZMS config! Reason: " + err.Error())
 	}
 
 	conf.setMode()

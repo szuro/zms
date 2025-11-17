@@ -65,7 +65,7 @@ func (bs *baseInput) setTargets() {
 				if err == nil {
 					subject.Register(t)
 				} else {
-					logger.Warn("Failed to register target", slog.String("name", target.Name))
+					logger.Warn("Failed to register target", slog.String("name", target.UniqueName))
 				}
 			}
 		}

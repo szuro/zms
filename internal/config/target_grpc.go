@@ -53,9 +53,9 @@ type GRPCObserver struct {
 // This initializes the gRPC plugin, sends configuration, and returns a wrapper.
 func (t *Target) ToGRPCObserver(config ZMSConf) (*GRPCObserver, error) {
 	// Create observer from gRPC plugin
-	client, _, err := plugin.GetGRPCRegistry().CreateObserver(t.PluginName)
+	client, _, err := plugin.GetGRPCRegistry().CreateObserver(t.PluginBinaryName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create gRPC plugin observer %s: %w", t.PluginName, err)
+		return nil, fmt.Errorf("failed to create gRPC plugin observer %s: %w", t.PluginBinaryName, err)
 	}
 
 	// Prepare filter config
@@ -74,7 +74,7 @@ func (t *Target) ToGRPCObserver(config ZMSConf) (*GRPCObserver, error) {
 
 	// Initialize the plugin
 	initReq := &proto.InitializeRequest{
-		Name:       t.Name,
+		Name:       t.UniqueName,
 		Connection: t.Connection,
 		Options:    t.Options,
 		Exports:    exports,
@@ -84,7 +84,7 @@ func (t *Target) ToGRPCObserver(config ZMSConf) (*GRPCObserver, error) {
 	resp, err := client.Initialize(context.Background(), initReq)
 	if err != nil {
 		client.Cleanup(context.Background(), &proto.CleanupRequest{})
-		return nil, fmt.Errorf("failed to initialize gRPC plugin observer %s: %w", t.PluginName, err)
+		return nil, fmt.Errorf("failed to initialize gRPC plugin observer %s: %w", t.PluginBinaryName, err)
 	}
 
 	if !resp.Success {
@@ -94,11 +94,15 @@ func (t *Target) ToGRPCObserver(config ZMSConf) (*GRPCObserver, error) {
 
 	obs := &GRPCObserver{
 		client:         client,
-		pluginName:     t.PluginName,
-		name:           t.Name,
+		pluginName:     t.PluginBinaryName,
+		name:           t.UniqueName,
 		enabledExports: t.Source,
 	}
+
 	obs.initObserverMetrics()
+	if resp.PluginInfo != nil {
+		obs.initPluginInfo(resp.PluginInfo.Author, resp.PluginInfo.Name, resp.PluginInfo.Version)
+	}
 	return obs, nil
 }
 
@@ -265,6 +269,20 @@ type observerMetrics struct {
 
 	// EventsValuesFailed tracks failed event record processing
 	EventsValuesFailed prometheus.Counter
+}
+
+func (o *GRPCObserver) initPluginInfo(author, name, version string) {
+	promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "zms_plugin_info",
+		Help: "Information about gRPC observer plugins",
+		ConstLabels: prometheus.Labels{
+			"unique_name":    o.name,
+			"type":           o.pluginName,
+			"plugin_name":    name,
+			"plugin_author":  author,
+			"plugin_version": version,
+		},
+	}).Set(1)
 }
 
 func (o *GRPCObserver) initObserverMetrics() {

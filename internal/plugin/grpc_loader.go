@@ -81,13 +81,6 @@ func (pr *GRPCPluginRegistry) LoadPlugin(pluginPath string) error {
 		slog.String("name", pluginName),
 		slog.String("path", pluginPath))
 
-	// Register plugin metrics
-	promauto.NewGauge(prometheus.GaugeOpts{
-		Name:        "zms_grpc_plugin_info",
-		Help:        "Information about loaded gRPC plugins",
-		ConstLabels: prometheus.Labels{"plugin_name": pluginName, "plugin_type": "grpc"},
-	}).Set(1)
-
 	return nil
 }
 
