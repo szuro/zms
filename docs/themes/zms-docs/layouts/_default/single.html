@@ -1,0 +1,32 @@
+{{ define "main" }}
+<article class="doc-content">
+    <header>
+        <h1>{{ .Title }}</h1>
+        {{ if .Description }}
+        <p class="lead">{{ .Description }}</p>
+        {{ end }}
+    </header>
+
+    <div class="content">
+        {{ .Content }}
+    </div>
+
+    {{ if .Params.toc }}
+    <aside class="toc">
+        <h2>Table of Contents</h2>
+        {{ .TableOfContents }}
+    </aside>
+    {{ end }}
+
+    <footer class="doc-footer">
+        {{ if .GitInfo }}
+        <p class="last-updated">Last updated: {{ .GitInfo.AuthorDate.Format "January 2, 2006" }}</p>
+        {{ end }}
+        {{ if .Site.Params.repository }}
+        <p class="edit-link">
+            <a href="{{ .Site.Params.repository }}/edit/master/{{ .File.Path }}" target="_blank">Edit this page on GitHub</a>
+        </p>
+        {{ end }}
+    </footer>
+</article>
+{{ end }}

@@ -1,0 +1,22 @@
+<header class="site-header">
+    <div class="container">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <a href="{{ "/" | relURL }}">
+                    <strong>{{ .Site.Title }}</strong>
+                </a>
+                <span class="version">v{{ .Site.Params.version }}</span>
+            </div>
+
+            <ul class="navbar-menu">
+                {{ range .Site.Menus.main }}
+                <li>
+                    <a href="{{ .URL }}" {{ if hasPrefix .URL "http" }}target="_blank" rel="noopener"{{ end }}>
+                        {{ .Name }}
+                    </a>
+                </li>
+                {{ end }}
+            </ul>
+        </nav>
+    </div>
+</header>

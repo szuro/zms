@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+    <meta name="description" content="{{ .Site.Params.description }}">
+
+    {{- /* Go vanity import path meta tag */ -}}
+    {{ if .Site.Params.goImportPath }}
+    <meta name="go-import" content="{{ .Site.Params.goImportPath }} git {{ .Site.Params.goSourceURL }}">
+    <meta name="go-source" content="{{ .Site.Params.goImportPath }} {{ .Site.Params.goSourceURL }} {{ .Site.Params.goSourceURL }}/tree/master{/dir} {{ .Site.Params.goSourceURL }}/blob/master{/dir}/{file}#L{line}">
+    {{ end }}
+
+    <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+    {{ block "head" . }}{{ end }}
+</head>
+<body>
+    {{ partial "header.html" . }}
+
+    <main class="container">
+        {{ block "main" . }}{{ end }}
+    </main>
+
+    {{ partial "footer.html" . }}
+</body>
+</html>

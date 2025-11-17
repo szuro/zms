@@ -1,0 +1,49 @@
+{{ define "main" }}
+<div class="home">
+    <section class="hero">
+        <h1>{{ .Site.Title }}</h1>
+        <p class="tagline">{{ .Site.Params.description }}</p>
+        <div class="hero-buttons">
+            <a href="{{ "docs/" | relURL }}" class="btn btn-primary">Get Started</a>
+            <a href="{{ .Site.Params.repository }}" class="btn btn-secondary">View on GitHub</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feature">
+            <h2>Multi-Target Support</h2>
+            <p>Send Zabbix export data to multiple destinations: Pushgateway, PostgreSQL, Azure Table, GCP Cloud Monitor, and more.</p>
+        </div>
+
+        <div class="feature">
+            <h2>Tag-Based Filtering</h2>
+            <p>Filter data based on Zabbix item tags with global and per-target filtering rules.</p>
+        </div>
+
+        <div class="feature">
+            <h2>Plugin System</h2>
+            <p>Extend functionality with gRPC-based plugins. Create custom observers without recompiling.</p>
+        </div>
+
+        <div class="feature">
+            <h2>Offline Buffer</h2>
+            <p>Automatic retry with BadgerDB-backed offline buffering for resilient data delivery.</p>
+        </div>
+    </section>
+
+    <section class="quick-start">
+        <h2>Quick Start</h2>
+        <pre><code># Download and build
+go install szuro.net/zms/cmd/zmsd@latest
+
+# Run with config
+zmsd -c /path/to/config.yaml</code></pre>
+    </section>
+
+    <section class="go-import">
+        <h2>Go Package Import</h2>
+        <pre><code>import "szuro.net/zms/pkg/zbx"</code></pre>
+        <p>Use ZMS packages in your Go applications. See <a href="{{ "api/" | relURL }}">API Reference</a> for details.</p>
+    </section>
+</div>
+{{ end }}
