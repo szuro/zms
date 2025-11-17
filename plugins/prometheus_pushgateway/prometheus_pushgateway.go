@@ -18,6 +18,13 @@ const (
 	PLUGIN_NAME = "prometheus_pushgateway"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     "1.0.0",
+	Author:      "Robert Szulist",
+	Description: "Plugin to export Zabbix history and trends to Prometheus Pushgateway",
+}
+
 // PrometheusPushgatewayPlugin implements the gRPC observer interface
 type PrometheusPushgatewayPlugin struct {
 	proto.UnimplementedObserverServiceServer
@@ -59,7 +66,7 @@ func (p *PrometheusPushgatewayPlugin) Initialize(ctx context.Context, req *proto
 		"job_name", p.jobName,
 		"name", req.Name)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data
@@ -83,7 +90,7 @@ func (p *PrometheusPushgatewayPlugin) SaveHistory(ctx context.Context, req *prot
 			ConstLabels: prometheus.Labels{
 				"host":   H.Host.Host,
 				"item":   H.Name,
-				"itemid": strconv.Itoa(H.ItemID),
+				"itemid": strconv.FormatInt(H.ItemID, 10),
 			},
 		})
 
@@ -137,7 +144,7 @@ func (p *PrometheusPushgatewayPlugin) SaveTrends(ctx context.Context, req *proto
 			ConstLabels: prometheus.Labels{
 				"host":   T.Host.Host,
 				"item":   T.Name,
-				"itemid": strconv.Itoa(T.ItemID),
+				"itemid": strconv.FormatInt(T.ItemID, 10),
 			},
 		})
 
@@ -147,7 +154,7 @@ func (p *PrometheusPushgatewayPlugin) SaveTrends(ctx context.Context, req *proto
 			ConstLabels: prometheus.Labels{
 				"host":   T.Host.Host,
 				"item":   T.Name,
-				"itemid": strconv.Itoa(T.ItemID),
+				"itemid": strconv.FormatInt(T.ItemID, 10),
 			},
 		})
 
@@ -157,7 +164,7 @@ func (p *PrometheusPushgatewayPlugin) SaveTrends(ctx context.Context, req *proto
 			ConstLabels: prometheus.Labels{
 				"host":   T.Host.Host,
 				"item":   T.Name,
-				"itemid": strconv.Itoa(T.ItemID),
+				"itemid": strconv.FormatInt(T.ItemID, 10),
 			},
 		})
 

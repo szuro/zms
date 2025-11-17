@@ -153,21 +153,21 @@ type History struct {
 	Host *Host `json:"host,omitempty"`
 
 	// ItemID is the unique identifier of the Zabbix item.
-	ItemID int `json:"itemid"`
+	ItemID int64 `json:"itemid"`
 
 	// Name is the visible/display name of the item as shown in Zabbix frontend.
 	Name string
 
 	// Clock is the Unix timestamp (seconds since epoch) when the value was collected.
 	// This represents the integer part of the collection time.
-	Clock int `json:"clock"`
+	Clock int64 `json:"clock"`
 
 	// Groups contains the list of host groups that the item's host belongs to.
 	Groups []string
 
 	// Ns is the nanoseconds component to be added to Clock for precise timing.
 	// Together with Clock, this provides nanosecond-precision timestamps.
-	Ns int
+	Ns int64
 
 	// Value contains the actual collected item value. The type depends on the item:
 	// - Numeric items: json.Number
@@ -185,13 +185,13 @@ type History struct {
 	// 2 (LOG) - log file entry
 	// 3 (UNSIGNED) - numeric unsigned integer value
 	// 4 (TEXT) - text value
-	Type int
+	Type int32
 
 	// Log-specific fields (only present when Type == LOG):
 
 	// Timestamp is the original timestamp from the log entry (log items only).
 	// Set to 0 if not available.
-	Timestamp int `json:"timestamp,omitempty"`
+	Timestamp int64 `json:"timestamp,omitempty"`
 
 	// Source is the source of the log entry (log items only).
 	// Empty string if not available.
@@ -204,11 +204,11 @@ type History struct {
 	// 3 - Average
 	// 4 - High
 	// 5 - Disaster
-	Severity int `json:"severity,omitempty"`
+	Severity int32 `json:"severity,omitempty"`
 
 	// EventID is the related event ID for log entries (log items only).
 	// Set to 0 if not available.
-	EventID int `json:"eventid,omitempty"`
+	EventID int64 `json:"eventid,omitempty"`
 }
 
 // ShowTags returns the tags associated with this history record.
@@ -246,18 +246,18 @@ type Trend struct {
 	Host *Host `json:"host,omitempty"`
 
 	// ItemID is the unique identifier of the Zabbix item.
-	ItemID int `json:"itemid"`
+	ItemID int64 `json:"itemid"`
 
 	// Name is the visible/display name of the item as shown in Zabbix frontend.
 	Name string
 
 	// Clock is the Unix timestamp (seconds since epoch) representing the hour
 	// for which these trend statistics were calculated.
-	Clock int
+	Clock int64
 
 	// Count is the number of individual values that were collected and
 	// aggregated to calculate these trend statistics.
-	Count int
+	Count int64
 
 	// Groups contains the list of host groups that the item's host belongs to.
 	Groups []string
@@ -279,7 +279,7 @@ type Trend struct {
 	// 0 (FLOAT) - numeric floating-point values
 	// 3 (UNSIGNED) - numeric unsigned integer values
 	// Note: Only numeric types have trend data generated.
-	Type int
+	Type int32
 }
 
 // ShowTags returns the tags associated with this trend record.
@@ -308,23 +308,23 @@ func (t Trend) Hash() []byte {
 type Event struct {
 	// Clock is the Unix timestamp (seconds since epoch) when the problem was
 	// detected or resolved. This represents the integer part of the event time.
-	Clock int `json:"clock"`
+	Clock int64 `json:"clock"`
 
 	// NS is the nanoseconds component to be added to Clock for precise timing.
 	// Together with Clock, this provides nanosecond-precision timestamps.
-	NS int `json:"ns"`
+	NS int64 `json:"ns"`
 
 	// Value indicates the event type:
 	// 1 - problem event (trigger went from OK to PROBLEM)
 	// 0 - recovery event (trigger went from PROBLEM to OK)
-	Value int `json:"value"`
+	Value int32 `json:"value"`
 
 	// EventID is the unique identifier for this specific event.
-	EventID int `json:"eventid"`
+	EventID int64 `json:"eventid"`
 
 	// PEventID is the ID of the related problem event (for recovery events only).
 	// This links recovery events back to their corresponding problem events.
-	PEventID int `json:"p_eventid,omitempty"`
+	PEventID int64 `json:"p_eventid,omitempty"`
 
 	// Name is the descriptive name of the problem (problem events only).
 	// This is typically the trigger expression or a user-defined description.
@@ -337,7 +337,7 @@ type Event struct {
 	// 3 - Average
 	// 4 - High
 	// 5 - Disaster
-	Severity int `json:"severity,omitempty"`
+	Severity int32 `json:"severity,omitempty"`
 
 	// Hosts contains the list of hosts involved in the trigger expression that
 	// generated this event (problem events only).

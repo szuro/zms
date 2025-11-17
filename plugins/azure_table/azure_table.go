@@ -18,6 +18,13 @@ const (
 	PLUGIN_NAME = "azure_table"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     "1.0.0",
+	Author:      "Robert Szulist",
+	Description: "Plugin to export Zabbix history and trends to Azure Table Storage",
+}
+
 type HistoryEntity struct {
 	aztables.Entity
 	HostHost, HostName string
@@ -73,9 +80,10 @@ func (p *AzureTablePlugin) Initialize(ctx context.Context, req *proto.Initialize
 
 	p.Logger.Info("Azure Table plugin initialized",
 		"connection", req.Connection,
-		"name", req.Name)
+		"name", req.Name,
+	)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data

@@ -30,6 +30,13 @@ const (
 	TREND_TYPE   = "custom.googleapis.com/zabbix_export/trend"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     "1.0.0",
+	Author:      "Robert Szulist",
+	Description: "Plugin to export Zabbix history and trends to Google Cloud Monitoring",
+}
+
 // GCPCloudMonitorPlugin implements the gRPC observer interface
 type GCPCloudMonitorPlugin struct {
 	proto.UnimplementedObserverServiceServer
@@ -90,7 +97,7 @@ func (p *GCPCloudMonitorPlugin) Initialize(ctx context.Context, req *proto.Initi
 		"project", creds.ProjectID,
 		"name", req.Name)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data
@@ -98,7 +105,7 @@ func (p *GCPCloudMonitorPlugin) SaveHistory(ctx context.Context, req *proto.Save
 	// Filter history entries
 	history := p.FilterHistory(req.History)
 	fails := int64(0)
-	metrics := make(map[int]*monitoringpb.TimeSeries, 0)
+	metrics := make(map[int64]*monitoringpb.TimeSeries, 0)
 
 	for _, hist := range history {
 		// Only process numeric values
@@ -111,7 +118,7 @@ func (p *GCPCloudMonitorPlugin) SaveHistory(ctx context.Context, req *proto.Save
 		} else {
 			// Send and clear
 			fails += p.sendHistory(metrics)
-			metrics = make(map[int]*monitoringpb.TimeSeries, 0)
+			metrics = make(map[int64]*monitoringpb.TimeSeries, 0)
 		}
 	}
 
@@ -147,7 +154,7 @@ func (p *GCPCloudMonitorPlugin) Cleanup(ctx context.Context, req *proto.CleanupR
 }
 
 // sendHistory sends time series data to GCP
-func (p *GCPCloudMonitorPlugin) sendHistory(metrics map[int]*monitoringpb.TimeSeries) (fails int64) {
+func (p *GCPCloudMonitorPlugin) sendHistory(metrics map[int64]*monitoringpb.TimeSeries) (fails int64) {
 	var ts []*monitoringpb.TimeSeries
 	for _, value := range metrics {
 		ts = append(ts, value)
@@ -193,7 +200,7 @@ func itemToMetric(item zbxpkg.History) *metricpb.Metric {
 		Type: HISTORY_TYPE,
 		Labels: map[string]string{
 			"item":   item.Name,
-			"itemid": strconv.Itoa(item.ItemID),
+			"itemid": strconv.FormatInt(item.ItemID, 10),
 			"host":   item.Host.Host,
 		},
 	}

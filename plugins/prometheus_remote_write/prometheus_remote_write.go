@@ -21,6 +21,13 @@ const (
 	PLUGIN_VERSION = "1.0.0"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     PLUGIN_VERSION,
+	Author:      "Robert Szulist",
+	Description: "Plugin to export Zabbix history and trends to Prometheus Remote Write endpoint",
+}
+
 // PrometheusRemoteWritePlugin implements the gRPC observer interface
 type PrometheusRemoteWritePlugin struct {
 	proto.UnimplementedObserverServiceServer
@@ -66,7 +73,7 @@ func (p *PrometheusRemoteWritePlugin) Initialize(ctx context.Context, req *proto
 		"connection", req.Connection,
 		"name", req.Name)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data
@@ -100,7 +107,6 @@ func (p *PrometheusRemoteWritePlugin) SaveHistory(ctx context.Context, req *prot
 		}, nil
 	}
 
-
 	return &proto.SaveResponse{
 		Success:          true,
 		RecordsProcessed: counter,
@@ -131,7 +137,6 @@ func (p *PrometheusRemoteWritePlugin) SaveTrends(ctx context.Context, req *proto
 		}, nil
 	}
 
-
 	return &proto.SaveResponse{
 		Success:          true,
 		RecordsProcessed: counter,
@@ -152,7 +157,7 @@ func (p *PrometheusRemoteWritePlugin) Cleanup(ctx context.Context, req *proto.Cl
 
 // zabbixHistoryToWriteRequest converts Zabbix history to Prometheus WriteRequest
 func zabbixHistoryToWriteRequest(history []zbxpkg.History) *prompb.WriteRequest {
-	promTS := make(map[int]prompb.TimeSeries, len(history))
+	promTS := make(map[int64]prompb.TimeSeries, len(history))
 
 	for _, H := range history {
 		sample := prompb.Sample{
@@ -249,8 +254,8 @@ func zabbixToLabels(export, host, itemID, itemName string) []prompb.Label {
 }
 
 // zabbixClock converts Zabbix clock to Prometheus timestamp (milliseconds)
-func zabbixClock(clock, ns int) int64 {
-	return time.Unix(int64(clock), int64(ns)).UnixMilli()
+func zabbixClock(clock, ns int64) int64 {
+	return time.Unix(clock, ns).UnixMilli()
 }
 
 // timestampSort is a comparison function for sorting samples by timestamp

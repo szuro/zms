@@ -19,6 +19,13 @@ const (
 	PLUGIN_NAME = "print"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     "1.0.0",
+	Author:      "Robert Szulist",
+	Description: "Basic log printing plugin",
+}
+
 // PrintPlugin implements the gRPC observer interface
 type PrintPlugin struct {
 	proto.UnimplementedObserverServiceServer
@@ -54,9 +61,10 @@ func (p *PrintPlugin) Initialize(ctx context.Context, req *proto.InitializeReque
 
 	p.Logger.Info("Print plugin initialized",
 		"connection", req.Connection,
-		"name", req.Name)
+		"name", req.Name,
+	)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data

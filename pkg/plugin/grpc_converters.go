@@ -13,13 +13,13 @@ func protoHistoryToZbx(protoHistory []*proto.History) []zbx.History {
 
 	for _, ph := range protoHistory {
 		h := zbx.History{
-			ItemID: int(ph.Itemid),
+			ItemID: ph.Itemid,
 			Name:   ph.Name,
-			Clock:  int(ph.Clock),
+			Clock:  ph.Clock,
 			Groups: ph.Groups,
-			Ns:     int(ph.Ns),
+			Ns:     ph.Ns,
 			Tags:   protoTagsToZbx(ph.Tags),
-			Type:   int(ph.ValueType),
+			Type:   int32(ph.ValueType),
 		}
 
 		// Convert host
@@ -40,10 +40,10 @@ func protoHistoryToZbx(protoHistory []*proto.History) []zbx.History {
 
 		// Log-specific fields
 		if ph.ValueType == proto.ValueType_LOG {
-			h.Timestamp = int(ph.Timestamp)
+			h.Timestamp = ph.Timestamp
 			h.Source = ph.Source
-			h.Severity = int(ph.Severity)
-			h.EventID = int(ph.Eventid)
+			h.Severity = int32(ph.Severity)
+			h.EventID = ph.Eventid
 		}
 
 		result = append(result, h)
@@ -58,16 +58,16 @@ func protoTrendsToZbx(protoTrends []*proto.Trend) []zbx.Trend {
 
 	for _, pt := range protoTrends {
 		t := zbx.Trend{
-			ItemID: int(pt.Itemid),
+			ItemID: pt.Itemid,
 			Name:   pt.Name,
-			Clock:  int(pt.Clock),
-			Count:  int(pt.Count),
+			Clock:  pt.Clock,
+			Count:  pt.Count,
 			Groups: pt.Groups,
 			Min:    pt.Min,
 			Max:    pt.Max,
 			Avg:    pt.Avg,
 			Tags:   protoTagsToZbx(pt.Tags),
-			Type:   int(pt.ValueType),
+			Type:   int32(pt.ValueType),
 		}
 
 		// Convert host
@@ -90,13 +90,13 @@ func protoEventsToZbx(protoEvents []*proto.Event) []zbx.Event {
 
 	for _, pe := range protoEvents {
 		e := zbx.Event{
-			Clock:    int(pe.Clock),
-			NS:       int(pe.Ns),
-			Value:    int(pe.Value),
-			EventID:  int(pe.Eventid),
-			PEventID: int(pe.PEventid),
+			Clock:    pe.Clock,
+			NS:       pe.Ns,
+			Value:    int32(pe.Value),
+			EventID:  pe.Eventid,
+			PEventID: pe.PEventid,
 			Name:     pe.Name,
-			Severity: int(pe.Severity),
+			Severity: int32(pe.Severity),
 			Groups:   pe.Groups,
 			Tags:     protoTagsToZbx(pe.Tags),
 		}
@@ -138,11 +138,11 @@ func protoTagsToZbx(protoTags []*proto.Tag) []zbx.Tag {
 // ZbxHistoryToProto converts a single zbx.History to proto.History.
 func ZbxHistoryToProto(h *zbx.History) *proto.History {
 	ph := &proto.History{
-		Itemid:    int64(h.ItemID),
+		Itemid:    h.ItemID,
 		Name:      h.Name,
-		Clock:     int64(h.Clock),
+		Clock:     h.Clock,
 		Groups:    h.Groups,
-		Ns:        int64(h.Ns),
+		Ns:        h.Ns,
 		Tags:      zbxTagsToProto(h.Tags),
 		ValueType: proto.ValueType(h.Type),
 	}
@@ -173,10 +173,10 @@ func ZbxHistoryToProto(h *zbx.History) *proto.History {
 
 	// Log-specific fields
 	if h.Type == zbx.LOG {
-		ph.Timestamp = int64(h.Timestamp)
+		ph.Timestamp = h.Timestamp
 		ph.Source = h.Source
 		ph.Severity = proto.Severity(h.Severity)
-		ph.Eventid = int64(h.EventID)
+		ph.Eventid = h.EventID
 	}
 
 	return ph
@@ -194,10 +194,10 @@ func ZbxHistorySliceToProto(zbxHistory []zbx.History) []*proto.History {
 // ZbxTrendToProto converts a single zbx.Trend to proto.Trend.
 func ZbxTrendToProto(t *zbx.Trend) *proto.Trend {
 	pt := &proto.Trend{
-		Itemid:    int64(t.ItemID),
+		Itemid:    t.ItemID,
 		Name:      t.Name,
-		Clock:     int64(t.Clock),
-		Count:     int64(t.Count),
+		Clock:     t.Clock,
+		Count:     t.Count,
 		Groups:    t.Groups,
 		Min:       t.Min,
 		Max:       t.Max,
@@ -229,11 +229,11 @@ func ZbxTrendsToProto(zbxTrends []zbx.Trend) []*proto.Trend {
 // ZbxEventToProto converts a single zbx.Event to proto.Event.
 func ZbxEventToProto(e *zbx.Event) *proto.Event {
 	pe := &proto.Event{
-		Clock:    int64(e.Clock),
-		Ns:       int64(e.NS),
+		Clock:    e.Clock,
+		Ns:       e.NS,
 		Value:    proto.EventValue(e.Value),
-		Eventid:  int64(e.EventID),
-		PEventid: int64(e.PEventID),
+		Eventid:  e.EventID,
+		PEventid: e.PEventID,
 		Name:     e.Name,
 		Severity: proto.Severity(e.Severity),
 		Groups:   e.Groups,

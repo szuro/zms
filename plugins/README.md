@@ -1,10 +1,10 @@
-# ZMS gRPC Plugins
+# ZMS Plugins
 
-This directory contains plugins migrated to the new gRPC-based plugin system using HashiCorp's go-plugin framework.
+This directory contains plugins for ZMS using HashiCorp's go-plugin framework.
 
-## Migration Overview
+## Plugin System
 
-All plugins from the old shared library system ([plugins/](../plugins/)) have been migrated to the new gRPC-based system. The new system provides:
+ZMS uses a gRPC-based plugin system that provides:
 
 - **Better isolation**: Plugins run as separate processes
 - **Version compatibility**: No Go version matching required
@@ -137,32 +137,20 @@ targets:
 
 ## Building Plugins
 
-### Manual Build
+### Using Makefile
 
-Build each plugin as a standalone executable:
+Build all plugins using the Makefile:
 
 ```bash
-# PostgreSQL plugin
-cd plugins_grpc/psql
+# Build all plugins
+make build-plugins
+
+# Build only specific plugins manually
+cd plugins/psql
 go build -o psql .
 
-# Azure Table plugin
-cd plugins_grpc/azure_table
+cd plugins/azure_table
 go build -o azure_table .
-
-# And so on...
-```
-
-### Using Docker
-
-Use the Docker plugin builder for consistent builds:
-
-```bash
-# Build the Docker image
-make docker-plugin-builder
-
-# Build all gRPC plugins
-docker run -v $(pwd)/plugins_grpc:/plugins -v $(pwd)/bin:/output zms-plugin-builder:latest
 ```
 
 ## Plugin Structure
@@ -177,8 +165,8 @@ import (
     "log"
 
     "github.com/hashicorp/go-plugin"
-    pluginPkg "szuro.net/zms/pkg/plugin"
-    "szuro.net/zms/proto"
+    pluginPkg "zms.szuro.net/pkg/plugin"
+    "zms.szuro.net/pkg/proto"
 )
 
 const PLUGIN_NAME = "my_plugin"
@@ -232,31 +220,17 @@ func main() {
 }
 ```
 
-## Key Differences from Old Plugins
+## Plugin Architecture
 
-| Aspect | Old System | New System |
-|--------|-----------|------------|
-| Build | `-buildmode=plugin` to `.so` | Standalone executable |
-| Loading | `plugin.Open()` | Process spawning via go-plugin |
-| Communication | Direct function calls | gRPC |
-| Interface | `plugin.Observer` | `proto.ObserverServiceServer` |
-| Base | `plugin.BaseObserverImpl` | `pluginPkg.BaseObserverGRPC` |
-| Isolation | Same process | Separate process |
-| Crash handling | Affects main app | Isolated |
-
-## Migration Checklist
-
-When migrating a plugin:
-
-- [x] Change package to `main`
-- [x] Embed `proto.UnimplementedObserverServiceServer`
-- [x] Embed `pluginPkg.BaseObserverGRPC` instead of `BaseObserverImpl`
-- [x] Update Initialize signature to accept `context.Context` and `*proto.InitializeRequest`
-- [x] Update Save* methods to accept context and proto requests, return `*proto.SaveResponse`
-- [x] Use `FilterHistory()`, `FilterTrends()`, `FilterEvents()` helper methods
-- [x] Convert from `plugin.Observer` to gRPC service
-- [x] Add `main()` function with `plugin.Serve()`
-- [x] Build as executable (not shared library)
+| Aspect | Implementation |
+|--------|----------------|
+| Build | Standalone executable binary |
+| Loading | Process spawning via go-plugin |
+| Communication | gRPC with Protocol Buffers |
+| Interface | `proto.ObserverServiceServer` |
+| Base | `pluginPkg.BaseObserverGRPC` |
+| Isolation | Separate process |
+| Crash handling | Isolated from main application |
 
 ## Testing Plugins
 
@@ -300,5 +274,5 @@ cp print ../../bin/plugins/
 - Main documentation: [CLAUDE.md](../CLAUDE.md)
 - Plugin interface: [pkg/plugin/grpc_plugin.go](../pkg/plugin/grpc_plugin.go)
 - Base observer: [pkg/plugin/grpc_base_observer.go](../pkg/plugin/grpc_base_observer.go)
-- Proto definitions: [proto/observer.proto](../proto/observer.proto)
-- Example plugin: [examples/plugins/log_print_grpc/](../examples/plugins/log_print_grpc/)
+- Proto definitions: [pkg/proto/zbx_exports.proto](../pkg/proto/zbx_exports.proto)
+- Example plugins: [examples/plugins/](../examples/plugins/)

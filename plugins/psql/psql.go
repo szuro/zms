@@ -22,6 +22,13 @@ const (
 	PLUGIN_NAME = "postgresql"
 )
 
+var info = proto.PluginInfo{
+	Name:        PLUGIN_NAME,
+	Version:     "1.0.0",
+	Author:      "Robert Szulist",
+	Description: "Plugin to export Zabbix history to PostgreSQL database",
+}
+
 // PSQLPlugin implements the gRPC observer interface
 type PSQLPlugin struct {
 	proto.UnimplementedObserverServiceServer
@@ -112,7 +119,7 @@ func (p *PSQLPlugin) Initialize(ctx context.Context, req *proto.InitializeReques
 		"connection", req.Connection,
 		"name", req.Name)
 
-	return &proto.InitializeResponse{Success: true}, nil
+	return &proto.InitializeResponse{Success: true, PluginInfo: &info}, nil
 }
 
 // SaveHistory processes history data
@@ -181,7 +188,7 @@ func (p *PSQLPlugin) saveHistoryToDB(h []zbxpkg.History) (int64, int64) {
 		if err != nil {
 			txn.Rollback()
 			p.Logger.Error("Failed to execute statement", "error", err)
-				return 0, historyLen
+			return 0, historyLen
 		}
 		processedCount++
 	}
@@ -205,8 +212,8 @@ func (p *PSQLPlugin) updateStats() {
 }
 
 // unixToStamp converts Unix timestamp to PostgreSQL timestamp format
-func unixToStamp(unix int) string {
-	tm := time.Unix(int64(unix), 0)
+func unixToStamp(unix int64) string {
+	tm := time.Unix(unix, 0)
 	return tm.Format("2006-01-02 15:04:05")
 }
 
