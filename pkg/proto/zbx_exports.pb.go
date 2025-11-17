@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v5.28.3
-// source: proto/zbx_exports.proto
+// source: pkg/proto/zbx_exports.proto
 
 package proto
 
@@ -66,11 +66,11 @@ func (x ValueType) String() string {
 }
 
 func (ValueType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_zbx_exports_proto_enumTypes[0].Descriptor()
+	return file_pkg_proto_zbx_exports_proto_enumTypes[0].Descriptor()
 }
 
 func (ValueType) Type() protoreflect.EnumType {
-	return &file_proto_zbx_exports_proto_enumTypes[0]
+	return &file_pkg_proto_zbx_exports_proto_enumTypes[0]
 }
 
 func (x ValueType) Number() protoreflect.EnumNumber {
@@ -79,7 +79,7 @@ func (x ValueType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ValueType.Descriptor instead.
 func (ValueType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{0}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{0}
 }
 
 // ExportType identifies the different types of Zabbix exports.
@@ -119,11 +119,11 @@ func (x ExportType) String() string {
 }
 
 func (ExportType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_zbx_exports_proto_enumTypes[1].Descriptor()
+	return file_pkg_proto_zbx_exports_proto_enumTypes[1].Descriptor()
 }
 
 func (ExportType) Type() protoreflect.EnumType {
-	return &file_proto_zbx_exports_proto_enumTypes[1]
+	return &file_pkg_proto_zbx_exports_proto_enumTypes[1]
 }
 
 func (x ExportType) Number() protoreflect.EnumNumber {
@@ -132,7 +132,7 @@ func (x ExportType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ExportType.Descriptor instead.
 func (ExportType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{1}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{1}
 }
 
 // EventValue indicates the event type (problem or recovery).
@@ -168,11 +168,11 @@ func (x EventValue) String() string {
 }
 
 func (EventValue) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_zbx_exports_proto_enumTypes[2].Descriptor()
+	return file_pkg_proto_zbx_exports_proto_enumTypes[2].Descriptor()
 }
 
 func (EventValue) Type() protoreflect.EnumType {
-	return &file_proto_zbx_exports_proto_enumTypes[2]
+	return &file_pkg_proto_zbx_exports_proto_enumTypes[2]
 }
 
 func (x EventValue) Number() protoreflect.EnumNumber {
@@ -181,7 +181,7 @@ func (x EventValue) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EventValue.Descriptor instead.
 func (EventValue) EnumDescriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{2}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{2}
 }
 
 // Severity indicates the severity level of a problem or log entry.
@@ -233,11 +233,11 @@ func (x Severity) String() string {
 }
 
 func (Severity) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_zbx_exports_proto_enumTypes[3].Descriptor()
+	return file_pkg_proto_zbx_exports_proto_enumTypes[3].Descriptor()
 }
 
 func (Severity) Type() protoreflect.EnumType {
-	return &file_proto_zbx_exports_proto_enumTypes[3]
+	return &file_pkg_proto_zbx_exports_proto_enumTypes[3]
 }
 
 func (x Severity) Number() protoreflect.EnumNumber {
@@ -246,7 +246,7 @@ func (x Severity) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Severity.Descriptor instead.
 func (Severity) EnumDescriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{3}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{3}
 }
 
 // FilterType represents the type of filter to apply.
@@ -286,11 +286,11 @@ func (x FilterType) String() string {
 }
 
 func (FilterType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_zbx_exports_proto_enumTypes[4].Descriptor()
+	return file_pkg_proto_zbx_exports_proto_enumTypes[4].Descriptor()
 }
 
 func (FilterType) Type() protoreflect.EnumType {
-	return &file_proto_zbx_exports_proto_enumTypes[4]
+	return &file_pkg_proto_zbx_exports_proto_enumTypes[4]
 }
 
 func (x FilterType) Number() protoreflect.EnumNumber {
@@ -299,7 +299,7 @@ func (x FilterType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FilterType.Descriptor instead.
 func (FilterType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{4}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{4}
 }
 
 // Host represents a Zabbix host with its technical name and display name.
@@ -315,7 +315,7 @@ type Host struct {
 
 func (x *Host) Reset() {
 	*x = Host{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[0]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +327,7 @@ func (x *Host) String() string {
 func (*Host) ProtoMessage() {}
 
 func (x *Host) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[0]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +340,7 @@ func (x *Host) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host.ProtoReflect.Descriptor instead.
 func (*Host) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{0}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Host) GetHost() string {
@@ -371,7 +371,7 @@ type Tag struct {
 
 func (x *Tag) Reset() {
 	*x = Tag{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[1]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -383,7 +383,7 @@ func (x *Tag) String() string {
 func (*Tag) ProtoMessage() {}
 
 func (x *Tag) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[1]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -396,7 +396,7 @@ func (x *Tag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tag.ProtoReflect.Descriptor instead.
 func (*Tag) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{1}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Tag) GetTag() string {
@@ -465,7 +465,7 @@ type History struct {
 
 func (x *History) Reset() {
 	*x = History{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[2]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -477,7 +477,7 @@ func (x *History) String() string {
 func (*History) ProtoMessage() {}
 
 func (x *History) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[2]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -490,7 +490,7 @@ func (x *History) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use History.ProtoReflect.Descriptor instead.
 func (*History) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{2}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *History) GetHost() *Host {
@@ -656,7 +656,7 @@ type Trend struct {
 
 func (x *Trend) Reset() {
 	*x = Trend{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[3]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -668,7 +668,7 @@ func (x *Trend) String() string {
 func (*Trend) ProtoMessage() {}
 
 func (x *Trend) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[3]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -681,7 +681,7 @@ func (x *Trend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trend.ProtoReflect.Descriptor instead.
 func (*Trend) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{3}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Trend) GetHost() *Host {
@@ -800,7 +800,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[4]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -812,7 +812,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[4]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +825,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{4}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Event) GetClock() int64 {
@@ -909,7 +909,7 @@ type SaveHistoryRequest struct {
 
 func (x *SaveHistoryRequest) Reset() {
 	*x = SaveHistoryRequest{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[5]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -921,7 +921,7 @@ func (x *SaveHistoryRequest) String() string {
 func (*SaveHistoryRequest) ProtoMessage() {}
 
 func (x *SaveHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[5]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -934,7 +934,7 @@ func (x *SaveHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveHistoryRequest.ProtoReflect.Descriptor instead.
 func (*SaveHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{5}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SaveHistoryRequest) GetHistory() []*History {
@@ -955,7 +955,7 @@ type SaveTrendsRequest struct {
 
 func (x *SaveTrendsRequest) Reset() {
 	*x = SaveTrendsRequest{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[6]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -967,7 +967,7 @@ func (x *SaveTrendsRequest) String() string {
 func (*SaveTrendsRequest) ProtoMessage() {}
 
 func (x *SaveTrendsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[6]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,7 +980,7 @@ func (x *SaveTrendsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveTrendsRequest.ProtoReflect.Descriptor instead.
 func (*SaveTrendsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{6}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SaveTrendsRequest) GetTrends() []*Trend {
@@ -1001,7 +1001,7 @@ type SaveEventsRequest struct {
 
 func (x *SaveEventsRequest) Reset() {
 	*x = SaveEventsRequest{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[7]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1013,7 +1013,7 @@ func (x *SaveEventsRequest) String() string {
 func (*SaveEventsRequest) ProtoMessage() {}
 
 func (x *SaveEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[7]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1026,7 +1026,7 @@ func (x *SaveEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveEventsRequest.ProtoReflect.Descriptor instead.
 func (*SaveEventsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{7}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SaveEventsRequest) GetEvents() []*Event {
@@ -1053,7 +1053,7 @@ type SaveResponse struct {
 
 func (x *SaveResponse) Reset() {
 	*x = SaveResponse{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[8]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1065,7 @@ func (x *SaveResponse) String() string {
 func (*SaveResponse) ProtoMessage() {}
 
 func (x *SaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[8]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1078,7 @@ func (x *SaveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveResponse.ProtoReflect.Descriptor instead.
 func (*SaveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{8}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SaveResponse) GetSuccess() bool {
@@ -1128,7 +1128,7 @@ type InitializeRequest struct {
 
 func (x *InitializeRequest) Reset() {
 	*x = InitializeRequest{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[9]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1140,7 +1140,7 @@ func (x *InitializeRequest) String() string {
 func (*InitializeRequest) ProtoMessage() {}
 
 func (x *InitializeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[9]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1153,7 +1153,7 @@ func (x *InitializeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitializeRequest.ProtoReflect.Descriptor instead.
 func (*InitializeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{9}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *InitializeRequest) GetName() string {
@@ -1208,7 +1208,7 @@ type PluginInfo struct {
 
 func (x *PluginInfo) Reset() {
 	*x = PluginInfo{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[10]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1220,7 +1220,7 @@ func (x *PluginInfo) String() string {
 func (*PluginInfo) ProtoMessage() {}
 
 func (x *PluginInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[10]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1233,7 +1233,7 @@ func (x *PluginInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginInfo.ProtoReflect.Descriptor instead.
 func (*PluginInfo) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{10}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PluginInfo) GetName() string {
@@ -1279,7 +1279,7 @@ type InitializeResponse struct {
 
 func (x *InitializeResponse) Reset() {
 	*x = InitializeResponse{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[11]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1291,7 +1291,7 @@ func (x *InitializeResponse) String() string {
 func (*InitializeResponse) ProtoMessage() {}
 
 func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[11]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1304,7 +1304,7 @@ func (x *InitializeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitializeResponse.ProtoReflect.Descriptor instead.
 func (*InitializeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{11}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *InitializeResponse) GetSuccess() bool {
@@ -1347,7 +1347,7 @@ type Filter struct {
 
 func (x *Filter) Reset() {
 	*x = Filter{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[12]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1359,7 +1359,7 @@ func (x *Filter) String() string {
 func (*Filter) ProtoMessage() {}
 
 func (x *Filter) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[12]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1372,7 +1372,7 @@ func (x *Filter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Filter.ProtoReflect.Descriptor instead.
 func (*Filter) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{12}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Filter) GetType() FilterType {
@@ -1405,7 +1405,7 @@ type CleanupRequest struct {
 
 func (x *CleanupRequest) Reset() {
 	*x = CleanupRequest{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[13]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1417,7 +1417,7 @@ func (x *CleanupRequest) String() string {
 func (*CleanupRequest) ProtoMessage() {}
 
 func (x *CleanupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[13]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1430,7 +1430,7 @@ func (x *CleanupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CleanupRequest.ProtoReflect.Descriptor instead.
 func (*CleanupRequest) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{13}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{13}
 }
 
 // CleanupResponse is returned after cleanup completes.
@@ -1446,7 +1446,7 @@ type CleanupResponse struct {
 
 func (x *CleanupResponse) Reset() {
 	*x = CleanupResponse{}
-	mi := &file_proto_zbx_exports_proto_msgTypes[14]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1458,7 +1458,7 @@ func (x *CleanupResponse) String() string {
 func (*CleanupResponse) ProtoMessage() {}
 
 func (x *CleanupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_zbx_exports_proto_msgTypes[14]
+	mi := &file_pkg_proto_zbx_exports_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1471,7 +1471,7 @@ func (x *CleanupResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CleanupResponse.ProtoReflect.Descriptor instead.
 func (*CleanupResponse) Descriptor() ([]byte, []int) {
-	return file_proto_zbx_exports_proto_rawDescGZIP(), []int{14}
+	return file_pkg_proto_zbx_exports_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CleanupResponse) GetSuccess() bool {
@@ -1488,11 +1488,11 @@ func (x *CleanupResponse) GetError() string {
 	return ""
 }
 
-var File_proto_zbx_exports_proto protoreflect.FileDescriptor
+var File_pkg_proto_zbx_exports_proto protoreflect.FileDescriptor
 
-const file_proto_zbx_exports_proto_rawDesc = "" +
+const file_pkg_proto_zbx_exports_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/zbx_exports.proto\x12\x05proto\".\n" +
+	"\x1bpkg/proto/zbx_exports.proto\x12\x05proto\".\n" +
 	"\x04Host\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"-\n" +
@@ -1625,23 +1625,23 @@ const file_proto_zbx_exports_proto_rawDesc = "" +
 	"SaveTrends\x12\x18.proto.SaveTrendsRequest\x1a\x13.proto.SaveResponse\x12;\n" +
 	"\n" +
 	"SaveEvents\x12\x18.proto.SaveEventsRequest\x1a\x13.proto.SaveResponse\x128\n" +
-	"\aCleanup\x12\x15.proto.CleanupRequest\x1a\x16.proto.CleanupResponseB\x15Z\x13szuro.net/zms/protob\x06proto3"
+	"\aCleanup\x12\x15.proto.CleanupRequest\x1a\x16.proto.CleanupResponseB\x19Z\x17szuro.net/zms/pkg/protob\x06proto3"
 
 var (
-	file_proto_zbx_exports_proto_rawDescOnce sync.Once
-	file_proto_zbx_exports_proto_rawDescData []byte
+	file_pkg_proto_zbx_exports_proto_rawDescOnce sync.Once
+	file_pkg_proto_zbx_exports_proto_rawDescData []byte
 )
 
-func file_proto_zbx_exports_proto_rawDescGZIP() []byte {
-	file_proto_zbx_exports_proto_rawDescOnce.Do(func() {
-		file_proto_zbx_exports_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_zbx_exports_proto_rawDesc), len(file_proto_zbx_exports_proto_rawDesc)))
+func file_pkg_proto_zbx_exports_proto_rawDescGZIP() []byte {
+	file_pkg_proto_zbx_exports_proto_rawDescOnce.Do(func() {
+		file_pkg_proto_zbx_exports_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_proto_zbx_exports_proto_rawDesc), len(file_pkg_proto_zbx_exports_proto_rawDesc)))
 	})
-	return file_proto_zbx_exports_proto_rawDescData
+	return file_pkg_proto_zbx_exports_proto_rawDescData
 }
 
-var file_proto_zbx_exports_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_proto_zbx_exports_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_proto_zbx_exports_proto_goTypes = []any{
+var file_pkg_proto_zbx_exports_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_pkg_proto_zbx_exports_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_pkg_proto_zbx_exports_proto_goTypes = []any{
 	(ValueType)(0),             // 0: proto.ValueType
 	(ExportType)(0),            // 1: proto.ExportType
 	(EventValue)(0),            // 2: proto.EventValue
@@ -1664,7 +1664,7 @@ var file_proto_zbx_exports_proto_goTypes = []any{
 	(*CleanupResponse)(nil),    // 19: proto.CleanupResponse
 	nil,                        // 20: proto.InitializeRequest.OptionsEntry
 }
-var file_proto_zbx_exports_proto_depIdxs = []int32{
+var file_pkg_proto_zbx_exports_proto_depIdxs = []int32{
 	5,  // 0: proto.History.host:type_name -> proto.Host
 	6,  // 1: proto.History.tags:type_name -> proto.Tag
 	0,  // 2: proto.History.value_type:type_name -> proto.ValueType
@@ -1701,12 +1701,12 @@ var file_proto_zbx_exports_proto_depIdxs = []int32{
 	0,  // [0:19] is the sub-list for field type_name
 }
 
-func init() { file_proto_zbx_exports_proto_init() }
-func file_proto_zbx_exports_proto_init() {
-	if File_proto_zbx_exports_proto != nil {
+func init() { file_pkg_proto_zbx_exports_proto_init() }
+func file_pkg_proto_zbx_exports_proto_init() {
+	if File_pkg_proto_zbx_exports_proto != nil {
 		return
 	}
-	file_proto_zbx_exports_proto_msgTypes[2].OneofWrappers = []any{
+	file_pkg_proto_zbx_exports_proto_msgTypes[2].OneofWrappers = []any{
 		(*History_NumericValue)(nil),
 		(*History_StringValue)(nil),
 	}
@@ -1714,18 +1714,18 @@ func file_proto_zbx_exports_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_zbx_exports_proto_rawDesc), len(file_proto_zbx_exports_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_zbx_exports_proto_rawDesc), len(file_pkg_proto_zbx_exports_proto_rawDesc)),
 			NumEnums:      5,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_zbx_exports_proto_goTypes,
-		DependencyIndexes: file_proto_zbx_exports_proto_depIdxs,
-		EnumInfos:         file_proto_zbx_exports_proto_enumTypes,
-		MessageInfos:      file_proto_zbx_exports_proto_msgTypes,
+		GoTypes:           file_pkg_proto_zbx_exports_proto_goTypes,
+		DependencyIndexes: file_pkg_proto_zbx_exports_proto_depIdxs,
+		EnumInfos:         file_pkg_proto_zbx_exports_proto_enumTypes,
+		MessageInfos:      file_pkg_proto_zbx_exports_proto_msgTypes,
 	}.Build()
-	File_proto_zbx_exports_proto = out.File
-	file_proto_zbx_exports_proto_goTypes = nil
-	file_proto_zbx_exports_proto_depIdxs = nil
+	File_pkg_proto_zbx_exports_proto = out.File
+	file_pkg_proto_zbx_exports_proto_goTypes = nil
+	file_pkg_proto_zbx_exports_proto_depIdxs = nil
 }

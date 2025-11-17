@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.28.3
-// source: proto/zbx_exports.proto
+// source: pkg/proto/zbx_exports.proto
 
 package proto
 
@@ -283,5 +283,5 @@ var ObserverService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/zbx_exports.proto",
+	Metadata: "pkg/proto/zbx_exports.proto",
 }
