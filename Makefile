@@ -8,7 +8,7 @@ BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
 # Build settings
 GO_VERSION = 1.25.1
 BINARY_NAME = zmsd
-MODULE_NAME = szuro.net/zms
+MODULE_NAME = zms.szuro.net
 CMD_DIR = ./cmd/zmsd
 PLUGINS_DIR = ./plugins
 BUILD_DIR = ./build
@@ -30,8 +30,8 @@ INSTALL_VAR_DIR = /var/lib/zms
 INSTALL_SYSCONFIG_DIR = /etc/sysconfig
 INSTALL_DEFAULT_DIR = /etc/default
 
-# Docker settings
-DOCKER_BUILDER_IMAGE = docker.io/zms-builder:latest
+# LDFLAGS for version injection
+LDFLAGS = -trimpath -ldflags="-X $(MODULE_NAME)/internal/config.Version=$(VERSION) -X $(MODULE_NAME)/internal/config.Commit=$(COMMIT) -X $(MODULE_NAME)/internal/config.BuildDate=$(BUILD_DATE)"
 
 # Default target
 all: clean build
@@ -44,8 +44,7 @@ help:
 	@echo "  all                  - Clean and build everything (default)"
 	@echo "  build                - Build main binary and all plugins"
 	@echo "  build-main           - Build only the main binary"
-	@echo "  build-plugins        - Build only the plugins"
-	@echo "  build-plugins-docker - Build plugins using Docker"
+	@echo "  build-plugins        - Build all plugins"
 	@echo "  package              - Create both RPM and DEB packages"
 	@echo "  package-rpm          - Create RPM package"
 	@echo "  package-deb          - Create DEB package"
@@ -53,11 +52,8 @@ help:
 	@echo "  test                 - Run tests"
 	@echo "  deps                 - Install build dependencies"
 	@echo "  deps-rpm             - Check RPM build dependencies"
-	@echo "  docker-images        - Build all Docker images"
-	@echo "  docker-builder       - Build the main application builder image"
-	@echo "  docker-plugin-builder - Build the plugin builder image"
-	@echo "  docker-clean         - Remove all Docker images"
 	@echo "  clean                - Clean build artifacts"
+	@echo "  info                 - Show build information"
 	@echo "  help                 - Show this help"
 	@echo ""
 	@echo "Environment variables:"
@@ -82,7 +78,8 @@ deps-rpm: deps
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR) $(DIST_DIR)
-	@rm -f $(BINARY_NAME) plugins/*.so
+	@rm -f $(BINARY_NAME)
+	@find $(PLUGINS_DIR) -maxdepth 1 -type f -executable ! -name "*.go" -delete 2>/dev/null || true
 	@echo "Clean complete"
 
 # Create build directories
@@ -95,10 +92,28 @@ mkdirs:
 $(DIST_DIR):
 	@mkdir -p $(DIST_DIR)
 
+# Build main binary
+build-main: mkdirs
+	@echo "Building main binary..."
+	@go build $(LDFLAGS) -o $(BUILD_DIR)/bin/$(BINARY_NAME) $(CMD_DIR)
+	@echo "Main binary built: $(BUILD_DIR)/bin/$(BINARY_NAME)"
+
+# Build all plugins
+build-plugins: mkdirs
+	@echo "Building plugins..."
+	@mkdir -p $(BUILD_DIR)/bin/plugins
+	@for plugin in $(PLUGINS_DIR)/*/; do \
+		if [ -f "$$plugin/main.go" ]; then \
+			plugin_name=$$(basename $$plugin); \
+			echo "Building plugin: $$plugin_name"; \
+			go build -o $(BUILD_DIR)/bin/plugins/$$plugin_name $$plugin; \
+		fi \
+	done
+	@echo "Plugins built in $(BUILD_DIR)/bin/plugins/"
+
 # Build everything
-build: mkdirs
-	@echo "Building using Docker..."
-	@podman run -v $(PWD)/build/bin/:/output -e VERSION=$(VERSION) -e COMMIT=$(COMMIT) -e BUILD_DATE=$(BUILD_DATE) $(DOCKER_BUILDER_IMAGE)
+build: build-main build-plugins
+	@echo "Build complete"
 
 # Run tests
 test:
@@ -191,7 +206,9 @@ install: build $(BUILD_DIR)/sysconfig/zms $(BUILD_DIR)/default/zms $(BUILD_DIR)/
 	@echo "Installing ZMS locally..."
 	@sudo mkdir -p $(INSTALL_BIN_DIR) $(INSTALL_PLUGINS_DIR) $(INSTALL_CONFIG_DIR) $(INSTALL_VAR_DIR) $(INSTALL_SYSCONFIG_DIR) $(INSTALL_DEFAULT_DIR)
 	@sudo cp $(BUILD_DIR)/bin/$(BINARY_NAME) $(INSTALL_BIN_DIR)/
-	@sudo cp $(BUILD_DIR)/plugins/*.so $(INSTALL_PLUGINS_DIR)/
+	@if [ -d "$(BUILD_DIR)/bin/plugins" ] && [ -n "$$(ls -A $(BUILD_DIR)/bin/plugins 2>/dev/null)" ]; then \
+		sudo cp $(BUILD_DIR)/bin/plugins/* $(INSTALL_PLUGINS_DIR)/; \
+	fi
 	@sudo cp $(BUILD_DIR)/config/zmsd.yaml $(INSTALL_CONFIG_DIR)/zmsd.yaml.example
 	@sudo cp $(BUILD_DIR)/sysconfig/zms $(INSTALL_SYSCONFIG_DIR)/zms
 	@sudo cp $(BUILD_DIR)/default/zms $(INSTALL_DEFAULT_DIR)/zms
@@ -213,23 +230,5 @@ info:
 	@echo "  Build Date: $(BUILD_DATE)"
 	@echo "  Go Version: $(shell go version)"
 
-
-# Docker image targets
-docker-builder:
-	@echo "Building Docker builder image: $(DOCKER_BUILDER_IMAGE)"
-	@docker build -f Dockerfile.builder -t $(DOCKER_BUILDER_IMAGE) .
-	@echo "Builder image built: $(DOCKER_BUILDER_IMAGE)"
-
-docker-plugin-builder:
-	@echo "Building Docker plugin builder image: $(DOCKER_PLUGIN_BUILDER_IMAGE)"
-	@docker build -f Dockerfile.plugin-builder -t $(DOCKER_PLUGIN_BUILDER_IMAGE) .
-	@echo "Plugin builder image built: $(DOCKER_PLUGIN_BUILDER_IMAGE)"
-
-docker-images: docker-builder docker-plugin-builder
-	@echo "All Docker images built successfully"
-
-docker-clean:
-	@echo "Removing Docker images..."
-	@docker rmi $(DOCKER_BUILDER_IMAGE) 2>/dev/null || true
-	@docker rmi $(DOCKER_PLUGIN_BUILDER_IMAGE) 2>/dev/null || true
-	@echo "Docker images removed"
+.PHONY: all build build-main build-plugins test clean deps deps-rpm mkdirs \
+	package package-rpm package-deb install info help
