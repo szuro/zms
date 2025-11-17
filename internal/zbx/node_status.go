@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"szuro.net/zms/internal/logger"
+	"zms.szuro.net/internal/logger"
 )
 
 const (

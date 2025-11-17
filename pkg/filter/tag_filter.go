@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"golang.org/x/exp/slices"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 type TagFilter struct {

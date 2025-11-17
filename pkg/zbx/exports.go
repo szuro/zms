@@ -11,7 +11,7 @@
 //
 // Example usage:
 //
-//	import "szuro.net/zms/pkg/zbx"
+//	import "zms.szuro.net/pkg/zbx"
 //
 //	// Process any export type generically
 //	func processExport[T zbx.Export](exports []T) {

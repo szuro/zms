@@ -3,8 +3,8 @@ package plugin
 import (
 	"encoding/json"
 
-	"szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	"zms.szuro.net/pkg/proto"
+	"zms.szuro.net/pkg/zbx"
 )
 
 // protoHistoryToZbx converts proto.History to zbx.History.

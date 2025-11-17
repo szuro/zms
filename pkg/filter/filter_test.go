@@ -3,7 +3,7 @@ package filter
 import (
 	"testing"
 
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 func TestFilter(t *testing.T) {

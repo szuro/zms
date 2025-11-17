@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"szuro.net/zms/internal/config"
-	"szuro.net/zms/internal/input"
-	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/internal/plugin"
-	"szuro.net/zms/internal/zbx"
+	"zms.szuro.net/internal/config"
+	"zms.szuro.net/internal/input"
+	"zms.szuro.net/internal/logger"
+	"zms.szuro.net/internal/plugin"
+	"zms.szuro.net/internal/zbx"
 
 	"net/http"
 

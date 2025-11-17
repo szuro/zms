@@ -7,10 +7,10 @@ import (
 
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/nxadm/tail"
-	"szuro.net/zms/internal/config"
-	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/internal/zbx"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	"zms.szuro.net/internal/config"
+	"zms.szuro.net/internal/logger"
+	"zms.szuro.net/internal/zbx"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 type FileInput struct {

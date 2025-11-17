@@ -5,7 +5,7 @@ package zbx
 import (
 	"time"
 
-	"szuro.net/zms/internal/logger"
+	"zms.szuro.net/internal/logger"
 )
 
 const DEFAULT_DELAY = 60 * time.Second

@@ -2,7 +2,7 @@ package filter
 
 import (
 	"golang.org/x/exp/slices"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 func writeTempConfigFile(t *testing.T, content string) string {

@@ -9,9 +9,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 const (

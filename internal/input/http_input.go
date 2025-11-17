@@ -13,9 +13,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/internal/config"
-	"szuro.net/zms/internal/logger"
+	zbxpkg "zms.szuro.net/pkg/zbx"
+	"zms.szuro.net/internal/config"
+	"zms.szuro.net/internal/logger"
 )
 
 var (

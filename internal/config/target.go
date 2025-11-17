@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	"szuro.net/zms/internal/plugin"
-	"szuro.net/zms/pkg/filter"
+	"zms.szuro.net/internal/plugin"
+	"zms.szuro.net/pkg/filter"
 )
 
 type Target struct {

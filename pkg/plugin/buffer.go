@@ -9,8 +9,8 @@ import (
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
-	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/pkg/zbx"
+	"zms.szuro.net/internal/logger"
+	"zms.szuro.net/pkg/zbx"
 )
 
 // ZMSBuffer defines the interface for offline data buffering.

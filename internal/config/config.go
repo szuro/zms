@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
-	"szuro.net/zms/pkg/filter"
+	"zms.szuro.net/pkg/filter"
 )
 
 const FILE_MODE = "file"

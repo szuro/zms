@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
-	"szuro.net/zms/proto"
+	"zms.szuro.net/pkg/proto"
 )
 
 // Handshake is the shared configuration between ZMS and plugins.

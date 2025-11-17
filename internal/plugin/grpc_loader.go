@@ -9,11 +9,9 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/logger"
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	"szuro.net/zms/proto"
+	"zms.szuro.net/internal/logger"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
 )
 
 // GRPCPluginRegistry manages gRPC-based observer plugins.

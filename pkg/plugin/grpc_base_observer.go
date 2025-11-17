@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	"szuro.net/zms/pkg/filter"
-	"szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	"zms.szuro.net/pkg/filter"
+	"zms.szuro.net/pkg/proto"
+	"zms.szuro.net/pkg/zbx"
 )
 
 // BaseObserverGRPC provides core functionality for gRPC-based observer plugins.

@@ -19,9 +19,9 @@ import (
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 const (

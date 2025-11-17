@@ -11,9 +11,9 @@ import (
 	"github.com/m3db/prometheus_remote_client_golang/promremote"
 	"github.com/prometheus/prometheus/prompb"
 
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 const (

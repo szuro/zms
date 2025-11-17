@@ -10,8 +10,8 @@ import (
 
 	"log/slog"
 
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/internal/logger"
+	zbxpkg "zms.szuro.net/pkg/zbx"
+	"zms.szuro.net/internal/logger"
 	//	"path/filepath"
 )
 

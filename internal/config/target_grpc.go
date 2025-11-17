@@ -8,11 +8,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/internal/plugin"
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	"szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	"zms.szuro.net/internal/logger"
+	"zms.szuro.net/internal/plugin"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
+	"zms.szuro.net/pkg/zbx"
 )
 
 type Observer interface {

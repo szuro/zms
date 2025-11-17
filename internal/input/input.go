@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"slices"
 
-	"szuro.net/zms/internal/config"
-	"szuro.net/zms/internal/logger"
-	"szuro.net/zms/pkg/filter"
+	"zms.szuro.net/internal/config"
+	"zms.szuro.net/internal/logger"
+	"zms.szuro.net/pkg/filter"
 )
 
 type Inputer interface {

@@ -9,8 +9,8 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	"szuro.net/zms/proto"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
 )
 
 const (

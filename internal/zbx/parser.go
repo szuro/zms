@@ -17,8 +17,8 @@ import (
 	"github.com/nxadm/tail"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/logger"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	"zms.szuro.net/internal/logger"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 func parseHistoryLine(line *tail.Line) (h zbxpkg.History, err error) {

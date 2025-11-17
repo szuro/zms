@@ -9,9 +9,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
 	"github.com/hashicorp/go-plugin"
 
-	pluginPkg "szuro.net/zms/pkg/plugin"
-	zbxpkg "szuro.net/zms/pkg/zbx"
-	"szuro.net/zms/proto"
+	pluginPkg "zms.szuro.net/pkg/plugin"
+	"zms.szuro.net/pkg/proto"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 const (

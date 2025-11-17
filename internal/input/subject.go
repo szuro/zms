@@ -3,9 +3,9 @@ package input
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"szuro.net/zms/internal/config"
-	"szuro.net/zms/pkg/filter"
-	zbxpkg "szuro.net/zms/pkg/zbx"
+	"zms.szuro.net/internal/config"
+	"zms.szuro.net/pkg/filter"
+	zbxpkg "zms.szuro.net/pkg/zbx"
 )
 
 type Subjecter interface {

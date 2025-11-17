@@ -19,7 +19,7 @@
 //
 //	package main
 //
-//	import "szuro.net/zms/pkg/plugin"
+//	import "zms.szuro.net/pkg/plugin"
 //
 //	var PluginInfo = plugin.PluginInfo{
 //	    Name: "my-plugin",
