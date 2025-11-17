@@ -1,0 +1,69 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+    - name: Build ZMS
+      run: |
+        VERSION=$(git describe --tags --always --dirty)
+        COMMIT=$(git rev-parse --short HEAD)
+        DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        go build -trimpath \
+          -ldflags="-s -w -X zms.szuro.net/internal/config.Version=$VERSION -X zms.szuro.net/internal/config.Commit=$COMMIT -X zms.szuro.net/internal/config.BuildDate=$DATE" \
+          -o zmsd \
+          ./cmd/zmsd
+
+    - name: Build plugins
+      run: |
+        mkdir -p plugins-bin
+        for plugin_dir in plugins/*/; do
+          plugin_name=$(basename "$plugin_dir")
+          echo "Building plugin: $plugin_name"
+          go build -trimpath -o "plugins-bin/$plugin_name" "./$plugin_dir"
+        done
+
+    - name: Upload coverage
+      if: github.event_name == 'push'
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.out
+        flags: unittests

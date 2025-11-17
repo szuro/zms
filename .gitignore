@@ -18,3 +18,8 @@
 history*.ndjson
 trends*.ndjson
 problems*.ndjson
+
+# Build directories
+build/
+dist/
+public/

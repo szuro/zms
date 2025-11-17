@@ -15,35 +15,80 @@ Features:
 `-c` - Path to zms config file<br>
 `-v` - Show version info
 
-# Configurarion
+# Configuration
 
-A sample configuration file may be found bellow:
+A sample configuration file may be found below:
 
-```
+```yaml
+# Zabbix server configuration (for FILE mode)
 server_config: /etc/zabbix/zabbix_server.conf
+
+# Buffer size for batch processing
 buffer_size: 100
-tag_filters:
+
+# Directory containing plugin executables (optional)
+plugins_dir: /usr/lib/zms/plugins
+
+# HTTP mode configuration (optional - alternative to FILE mode)
+# http:
+#   listen_address: localhost
+#   listen_port: 2020
+
+# Global tag filters (optional)
+filter:
   accepted:
-  - tag: <name>
-    value: <value>
+  - "tag_name:tag_value"
+  - "environment:production"
   rejected:
-  - tag: <name>
-    value: <value>
+  - "ignore:true"
+
+# Output targets
 targets:
 - name: <unique_name>
-  type: pushgateway|gcp_cloud_monitor|azuretable|print
+  type: pushgateway|azuretable|print|psql|log_print
   connection: <connectionstring>
-  tag_filters:
+
+  # Plugin-specific options (optional)
+  options:
+    custom_option: value
+
+  # Per-target tag filters (optional)
+  filter:
     accepted:
-    - tag: <name>
-      value: <value>
+    - "tag_name:tag_value"
     rejected:
-    - tag: <name>
-      value: <value>
-  source:
+    - "ignore:true"
+
+  # Export types to process
+  exports:
   - history
   - trends
   - events
+
+# Example plugin configurations:
+
+# Built-in targets
+- name: metrics_gateway
+  type: pushgateway
+  connection: http://localhost:9091
+  exports:
+  - history
+
+# Plugin example: log_print (filters LOG type history items)
+- name: log_output
+  type: log_print
+  connection: stdout  # or "stderr"
+  exports:
+  - history
+
+# Plugin example: PostgreSQL
+- name: postgres_db
+  type: psql
+  connection: postgres://user:pass@localhost/zabbix
+  exports:
+  - history
+  options:
+    max_connections: "10"
 ```
 
 The parameters have the following meaning:
@@ -56,15 +101,48 @@ Absolute path to Zabbix Server config. Must be readable by ZMS. It is used to ge
 
 Size of local in-memory buffer. It is shared between targets. Setting buffer to N will force ZMS to send N values one batch request if possible (not all targets support this).
 
-## tag_filters
+## plugins_dir
 
-Optional filtering. May be useful when presented with a significant amount of data. No filter means every value is accepted and sent to configured targets.
-If specifying accepted or rejected tags, the following logic is used:
-- only accepted are provided -> only matching tags are allowed
-- only rejected are specified -> everything is allowed expect for matching tags
-- both accepted and rejected are provided -> only accepted tags that were not rejected later are accepted
+Optional path to directory containing plugin executables. ZMS will search this directory for plugin binaries when loading targets.
+Defaults to `./plugins` if not specified.
 
-Tag names and values _must_ be exact, currently regex or wildards are not supported.
+Plugins are standalone executables (not shared libraries) that implement the gRPC observer interface.
+
+## http
+
+Optional HTTP mode configuration. When specified, ZMS runs an HTTP server to receive data instead of reading from export files.
+
+Fields:
+- `listen_address` - Address to bind the HTTP server (e.g., `localhost`, `0.0.0.0`)
+- `listen_port` - Port number for the HTTP server
+
+This mode is mutually exclusive with file-based processing.
+
+## filter
+
+Optional filtering based on Zabbix item tags. May be useful when presented with a significant amount of data. No filter means every value is accepted and sent to configured targets.
+
+### Filter Format
+
+Filters use the format `"tag_name:tag_value"` as strings in YAML arrays:
+
+```yaml
+filter:
+  accepted:
+  - "environment:production"
+  - "application:web"
+  rejected:
+  - "debug:true"
+  - "ignore:yes"
+```
+
+### Filter Logic
+
+- **only accepted provided** → only matching tags are allowed
+- **only rejected specified** → everything is allowed except for matching tags
+- **both accepted and rejected provided** → only accepted tags that were not rejected later are accepted
+
+Tag names and values _must_ be exact. Currently regex or wildcards are not supported.
 
 ## targets
 
@@ -90,11 +168,21 @@ It is possible to define multiple targets with the same type, given that their n
 
 Connection specific to the target type.
 
-### source
+### exports
 
-Determines which type of exported data should be sent to this target. ZMS can only sent what's exported by Zabbix.
+Determines which type of exported data should be sent to this target. ZMS can only send what's exported by Zabbix.
 If there's a mismatch, there will be an error.
-Note that it is possible to send different sources to different targets.
+Note that it is possible to send different exports to different targets.
+
+Supported values:
+- `history` - Historical data (item values)
+- `trends` - Trend data (aggregated statistics)
+- `events` - Event data
+
+### options
+
+Optional key-value pairs for plugin-specific configuration. Different plugins may support different options.
+For example, the `psql` plugin supports `max_connections` to configure the database connection pool.
 
 # Target overview
 

@@ -1,0 +1,7 @@
+name = "ZMS Docs"
+license = "MIT"
+description = "Documentation theme for ZMS (Zabbix Metric Shipper)"
+homepage = "https://zms.szuro.net/"
+tags = ["documentation", "technical", "clean"]
+features = ["go-vanity-url"]
+min_version = "0.120.0"

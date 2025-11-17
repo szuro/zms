@@ -1,0 +1,31 @@
+<footer class="site-footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>{{ .Site.Title }}</h3>
+                <p>{{ .Site.Params.description }}</p>
+            </div>
+
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="{{ "docs/" | relURL }}">Documentation</a></li>
+                    <li><a href="{{ "plugins/" | relURL }}">Plugin Development</a></li>
+                    <li><a href="{{ .Site.Params.repository }}" target="_blank">GitHub Repository</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h3>Go Package</h3>
+                <ul>
+                    <li><a href="{{ "api/" | relURL }}">API Reference</a></li>
+                    <li><code>szuro.net/zms</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; {{ now.Year }} ZMS Project. Built with <a href="https://gohugo.io" target="_blank">Hugo</a>.</p>
+        </div>
+    </div>
+</footer>

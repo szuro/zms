@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Get version info
+      id: version
+      run: |
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
+    - name: Build binaries for all platforms
+      run: |
+        mkdir -p dist
+
+        # Build for different platforms
+        platforms=(
+          "linux/amd64"
+          "linux/arm64"
+        )
+
+        for platform in "${platforms[@]}"; do
+          GOOS=${platform%/*}
+          GOARCH=${platform#*/}
+          output="dist/zmsd-${GOOS}-${GOARCH}"
+
+          echo "Building for $GOOS/$GOARCH..."
+          CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -trimpath \
+            -ldflags="-s -w -X zms.szuro.net/internal/config.Version=${{ steps.version.outputs.version }} -X zms.szuro.net/internal/config.Commit=${{ steps.version.outputs.commit }} -X zms.szuro.net/internal/config.BuildDate=${{ steps.version.outputs.date }}" \
+            -o "$output" \
+            ./cmd/zmsd
+        done
+
+    - name: Build plugins
+      run: |
+        mkdir -p dist/plugins-linux-amd64
+
+        for plugin_dir in plugins/*/; do
+          plugin_name=$(basename "$plugin_dir")
+          echo "Building plugin: $plugin_name"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath \
+            -o "dist/plugins-linux-amd64/$plugin_name" \
+            "./$plugin_dir"
+        done
+
+    - name: Create archives
+      run: |
+        cd dist
+
+        # Create tar.gz for Linux and Darwin
+        for os in linux darwin; do
+          for arch in amd64 arm64; do
+            if [ -f "zmsd-${os}-${arch}" ]; then
+              tar czf "zmsd-${os}-${arch}.tar.gz" "zmsd-${os}-${arch}"
+              sha256sum "zmsd-${os}-${arch}.tar.gz" > "zmsd-${os}-${arch}.tar.gz.sha256"
+            fi
+          done
+        done
+
+        # Create plugins archive
+        if [ -d "plugins-linux-amd64" ]; then
+          tar czf "plugins-linux-amd64.tar.gz" -C plugins-linux-amd64 .
+          sha256sum "plugins-linux-amd64.tar.gz" > "plugins-linux-amd64.tar.gz.sha256"
+        fi
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+        if [ -n "$PREV_TAG" ]; then
+          echo "## Changes since $PREV_TAG" > CHANGELOG.md
+          git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
+        else
+          echo "## Initial Release" > CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+        fi
+
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat CHANGELOG.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Release ${{ steps.version.outputs.tag }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.tag, 'rc') || contains(steps.version.outputs.tag, 'beta') || contains(steps.version.outputs.tag, 'alpha') }}
+        files: |
+          dist/*.tar.gz
+          dist/*.tar.gz.sha256
+          dist/*.zip
+          dist/*.zip.sha256
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.DOCKER_USERNAME }}/zms
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

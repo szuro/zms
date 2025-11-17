@@ -1,0 +1,67 @@
+baseURL = 'https://zms.szuro.net/'
+languageCode = 'en-us'
+title = 'ZMS - Zabbix Metric Shipper'
+theme = 'zms-docs'
+
+# Remove trailing slash from URLs
+disablePathToLower = false
+removePathAccents = true
+
+[permalinks]
+  [permalinks.page]
+    docs = '/:slug/'
+
+[params]
+  description = 'ZMS (Zabbix Metric Shipper) - Parse, filter and ship Zabbix export data to multiple destinations'
+  repository = 'https://github.com/szuro/zms'
+  version = '0.5.1'
+
+  # Go vanity import path
+  goImportPath = 'zms.szuro.net'
+  goSourceURL = 'https://github.com/szuro/zms'
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.highlight]
+    style = 'monokai'
+    lineNos = true
+    lineNumbersInTable = true
+
+[menu]
+  [[menu.main]]
+    name = 'Documentation'
+    url = '/docs/'
+    weight = 1
+
+  [[menu.main]]
+    name = 'Configuration'
+    url = '/configuration/'
+    weight = 2
+
+  [[menu.main]]
+    name = 'Plugins'
+    url = '/plugins/'
+    weight = 3
+
+  [[menu.main]]
+    name = 'API Reference'
+    url = '/api/'
+    weight = 4
+
+  [[menu.main]]
+    name = 'GitHub'
+    url = 'https://github.com/szuro/zms'
+    weight = 5
+
+# Output formats for vanity URL support
+[outputs]
+  home = ["HTML", "RSS"]
+  page = ["HTML"]
+
+[outputFormats]
+  [outputFormats.HTML]
+    mediaType = "text/html"
+    isPlainText = false
+    isHTML = true
