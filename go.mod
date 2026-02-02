@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.7.0
 	github.com/klauspost/compress v1.18.2
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/m3db/prometheus_remote_client_golang v0.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/prometheus/prometheus v0.309.1
